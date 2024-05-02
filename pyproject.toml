@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "arrowmancer-gym"
+version = "0.1.0"
+description = "RL environment for Spellbrush's Arrowmancer"
+authors = ["Cooper Miller <kcoopermiller9@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+gymnasium = "^0.29.1"
+minigrid = "^2.3.1"
+torchrl = "^0.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
