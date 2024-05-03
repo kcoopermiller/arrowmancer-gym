@@ -19,7 +19,8 @@ class ArrowmancerEnv(gym.Env):
             'unit_positions': spaces.Box(low=0, high=self.grid_size - 1, shape=(self.num_units, 2), dtype=int),
             'enemy_attacks': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
             'current_unit': spaces.Discrete(self.num_units),
-            'current_move_index': spaces.Discrete(6)
+            'current_move_index': spaces.Discrete(6),
+            'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6,), dtype=int)
         })
         self.current_unit = 0  # Index of the current unit performing the dance
         self.current_move_index = 0  # Index of the current move in the dance pattern
@@ -96,13 +97,16 @@ class ArrowmancerEnv(gym.Env):
         self.grid.fill(0)
         for pos in self.unit_positions:
             self.grid[pos[0], pos[1]] = 1
+        unit = self.units[self.current_unit]
+        current_dance_pattern = dance_patterns[unit['name']][unit['level']]
         # Return the current observation as a dictionary
         return {
             'grid': self.grid,
             'unit_positions': self.unit_positions,
             'enemy_attacks': self.enemy_attacks,
             'current_unit': self.current_unit,
-            'current_move_index': self.current_move_index
+            'current_move_index': self.current_move_index,
+            'current_dance_pattern': current_dance_pattern
         }
 
     def _check_dance_move(self, move):
