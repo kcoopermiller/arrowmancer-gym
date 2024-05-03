@@ -1,7 +1,7 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from src.dance import dance_patterns
+from .dance import dance_patterns
 
 class ArrowmancerEnv(gym.Env):
     def __init__(self, units):

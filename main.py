@@ -1,5 +1,4 @@
-from src.dance import dance_patterns
-from src.env import ArrowmancerEnv
+from src import ArrowmancerEnv
 
 units = [
     {'name': 'Capricorn', 'level': '4A'}, 
