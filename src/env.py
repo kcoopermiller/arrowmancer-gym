@@ -161,14 +161,20 @@ class ArrowmancerEnv(gym.Env):
             self.screen = pygame.display.set_mode((screen_width, screen_height))
             pygame.display.set_caption("Arrowmancer")
         
-        self.screen.fill((255, 255, 255))  # Clear the screen with white color
+        self.screen.fill((130, 139, 115)) # Fill the screen with a light green color
 
         # Grid rendering
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 cell_rect = pygame.Rect(self.padding + j * self.cell_size, self.padding + i * self.cell_size, self.cell_size, self.cell_size)
-                pygame.draw.rect(self.screen, (255, 255, 255), cell_rect)  # Draw cell background
-                pygame.draw.rect(self.screen, (0, 0, 0), cell_rect, 2)  # Draw cell border
+                pygame.draw.rect(self.screen, (75, 68, 60), cell_rect)  # Draw cell background
+                pygame.draw.rect(self.screen, (130, 139, 115), cell_rect, 2)  # Draw cell border                
+                
+                # Draw smaller pink square inside the cell
+                pink_square_size = int(self.cell_size * 0.8)
+                pink_square_rect = pygame.Rect(cell_rect.centerx - pink_square_size // 2, cell_rect.centery - pink_square_size // 2, pink_square_size, pink_square_size)
+                pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
+                
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
                         # If dancing unit use different emoji
@@ -183,15 +189,15 @@ class ArrowmancerEnv(gym.Env):
         # Dance pattern info rendering
         unit = self.units[self.current_unit]
         dance_pattern = dance_patterns[unit['name']][unit['level']]
-        font = pygame.font.Font(None, 24)
+        font = pygame.font.Font(None, 32)
         move_texts = []
         for i, move in enumerate(dance_pattern):
             if i == self.current_move_index:
-                move_texts.append(font.render(f"{move}", True, (0, 255, 0)))  # Highlight the current move
+                move_texts.append(font.render(f"{move}", True, (0, 255, 255))) # Highlight the current move
             else:
-                move_texts.append(font.render(f"{move}", True, (0, 0, 0)))
+                move_texts.append(font.render(f"{move}", True, (62, 80, 86)))
 
-        name_text = font.render(f"{unit['name']} {unit['level']} Dance Pattern: ", True, (0, 0, 0))
+        name_text = font.render(f"{unit['name']} {unit['level']} Dance Pattern: ", True, (62, 80, 86))
         name_rect = name_text.get_rect(x=self.padding, y=self.grid_size * self.cell_size + self.padding + 30)
         self.screen.blit(name_text, name_rect)
 
