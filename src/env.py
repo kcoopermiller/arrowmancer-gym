@@ -20,7 +20,7 @@ class ArrowmancerEnv(gym.Env):
             'enemy_attacks': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
             'current_unit': spaces.Discrete(self.num_units),
             'current_move_index': spaces.Discrete(6),
-            'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6,), dtype=int)
+            'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6, 2), dtype=int)
         })
         self.current_unit = 0  # Index of the current unit performing the dance
         self.current_move_index = 0  # Index of the current move in the dance pattern
@@ -38,7 +38,7 @@ class ArrowmancerEnv(gym.Env):
         return self._get_obs()
 
     def step(self, action):
-        # Get the current unit
+        # TODO: Need ability to choose which unit to move
         current_unit_pos = self.unit_positions[self.current_unit]
         # Update the position of the current unit based on the action
         if action == 0:  # Move up
@@ -99,7 +99,10 @@ class ArrowmancerEnv(gym.Env):
             self.grid[pos[0], pos[1]] = 1
         unit = self.units[self.current_unit]
         current_dance_pattern = dance_patterns[unit['name']][unit['level']]
-        # Return the current observation as a dictionary
+        # Change tuples to numpy arrays and pad the dance pattern with zeros
+        current_dance_pattern = np.array([np.array(np.pad(move, (0, 2 - len(move)),'constant')) for move in current_dance_pattern])
+        # # Pad the dance pattern with zeros to have a fixed length of 6
+        current_dance_pattern = np.pad(current_dance_pattern, ((0, 6 - len(current_dance_pattern)), (0, 0)), 'constant')
         return {
             'grid': self.grid,
             'unit_positions': self.unit_positions,
@@ -107,7 +110,7 @@ class ArrowmancerEnv(gym.Env):
             'current_unit': self.current_unit,
             'current_move_index': self.current_move_index,
             'current_dance_pattern': current_dance_pattern
-        }
+        }, 0 # dummy reward
 
     def _check_dance_move(self, move):
         for pos in move:
