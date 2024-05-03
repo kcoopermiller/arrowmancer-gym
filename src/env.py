@@ -35,7 +35,6 @@ class ArrowmancerEnv(gym.Env):
     def step(self, action):
         # Get the current unit
         current_unit_pos = self.unit_positions[self.current_unit]
-
         # Update the position of the current unit based on the action
         if action == 0:  # Move up
             new_pos = [current_unit_pos[0] - 1, current_unit_pos[1]]
@@ -55,7 +54,7 @@ class ArrowmancerEnv(gym.Env):
         unit = self.units[self.current_unit]
         move = dance_patterns[unit['name']][unit['level']][self.current_move_index]
         if self._check_dance_move(move):
-            reward = 1
+            reward = 1 + 0.1 * self.current_move_index # 10% increase for combos, TODO: reset if the player attacks the enemy
             self.current_move_index += 1
             # Move to the next unit if the current unit has completed all dance moves
             if self.current_move_index >= len(dance_patterns[unit['name']][unit['level']]):
@@ -64,8 +63,8 @@ class ArrowmancerEnv(gym.Env):
 
         # Generate enemy attacks targeting either one grid or a column of 3 grids with 50% probability
         self.enemy_attacks = np.zeros((self.grid_size, self.grid_size), dtype=int)
-        attack_type = np.random.choice(['single', 'column'])
-        attack = np.random.choice([0, 1]) # 50% chance of enemy attack
+        attack = np.random.choice([0, 1], p=[0.8,0.2]) # 80% chance of no attack
+        attack_type = np.random.choice(['single', 'column'], p=[0.8, 0.2]) # 80% chance of single grid attack
         if attack:
             if attack_type == 'single':
                 # Attack a single random grid
@@ -96,7 +95,6 @@ class ArrowmancerEnv(gym.Env):
             'grid': self.grid,
             'unit_positions': self.unit_positions,
             'enemy_attacks': self.enemy_attacks,
-            'dance_patterns': self.dance_patterns,
             'current_unit': self.current_unit,
             'current_move_index': self.current_move_index
         }
@@ -123,9 +121,9 @@ class ArrowmancerEnv(gym.Env):
         if move == -13:
             return current_pos[0] == 0
         elif move == -11:
-            return current_pos[0] == 0 and current_pos[1] == 0
+            return current_pos[1] == 0
         elif move == 11:
-            return current_pos[0] == 0 and current_pos[1] == self.grid_size - 1
+            return current_pos[1] == self.grid_size - 1
         elif move == 13:
             return current_pos[0] == self.grid_size - 1
         return False
@@ -136,7 +134,7 @@ class ArrowmancerEnv(gym.Env):
         # -4 -3 -2         [-1, -1] [-1, 0] [-1, 1]
         # -1  0  1         [0, -1]  [0, 0]  [0, 1]
         # 2  3  4          [1, -1]  [1, 0]  [1, 1]
-        return [[(offset + 1) // 3 - 1, (offset + 1) % 3 - 1]]
+        return [(offset + 1) // 3 - 1, (offset + 1) % 3 - 1]
 
     def _is_valid_position(self, pos):
         # Check if the given position is within the grid boundaries
@@ -153,7 +151,6 @@ class ArrowmancerEnv(gym.Env):
         grid_size = self.grid_size
         unit_positions = self.unit_positions
         enemy_attacks = self.enemy_attacks
-        dance_patterns = self.dance_patterns
 
         # Create a visual representation of the grid
         grid_str = ""
@@ -163,21 +160,26 @@ class ArrowmancerEnv(gym.Env):
                 cell_str = "."
                 for k in range(self.num_units):
                     if (unit_positions[k] == [i, j]).all():
-                        cell_str = str(k + 1)
+                        # if dancing unit use different emoji
+                        if k == self.current_unit:
+                            cell_str = "💃"
+                        else:
+                            cell_str = "🧙‍♀️"
                         break
                 if enemy_attacks[i, j] == 1:
-                    cell_str = "X"
+                    cell_str = "🟪"
                 row_str += cell_str + " "
             grid_str += row_str + "\n"
 
         # Create a visual representation of the dance patterns
-        dance_pattern_str = "Dance Patterns: "
-        for i in range(self.num_units):
-            if dance_patterns[i] == 1:
-                dance_pattern_str += f"Unit {i + 1}: Dance "
+        unit = self.units[self.current_unit]
+        dance_pattern_str = f"{unit['name']} {unit['level']} Dance Pattern: "
+        dance_pattern = dance_patterns[unit['name']][unit['level']]
+        for i, move in enumerate(dance_pattern):
+            if i == self.current_move_index:
+                dance_pattern_str += f"[{move}] "
             else:
-                dance_pattern_str += f"Unit {i + 1}: No Dance "
+                dance_pattern_str += f"{move} "
 
-        # Print the grid and dance patterns
         print(grid_str)
         print(dance_pattern_str)
