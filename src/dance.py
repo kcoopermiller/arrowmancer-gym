@@ -1,13 +1,8 @@
-# non-anchors
-# -4 -3 -2
-# -1  0 +1
-# +2 +3 +4
-
-# anchors
-#    -13
-# -11   +11
-#    +13
-
+# non-anchors   anchors
+# -4 -3 -2        -13
+# -1  0 +1     -11  +11
+# +2 +3 +4       +13
+# https://docs.google.com/spreadsheets/d/1GiQt4J175gmIOcfk86FWRHUGav1pZmsnNSo-zbz5CsA/edit?usp=sharing
 dance_patterns = {
     "Capricorn": {
         "6": [(-4,),(-3,-1),(-2,2),(1,3),(4,)],

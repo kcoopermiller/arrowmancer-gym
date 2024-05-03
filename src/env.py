@@ -2,11 +2,15 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from .dance import dance_patterns
+import pygame
 
 class ArrowmancerEnv(gym.Env):
     def __init__(self, units):
         super(ArrowmancerEnv, self).__init__()
         self.grid_size = 3  # 3x3
+        self.cell_size = 200  # 200x200 pixels
+        self.screen = None
+        self.padding = 50 # Padding around the grid
         self.units = units 
         self.num_units = len(units)
         self.action_space = spaces.Discrete(4)  # 0: Up, 1: Right, 2: Down, 3: Left
@@ -61,7 +65,8 @@ class ArrowmancerEnv(gym.Env):
                 self.current_unit = (self.current_unit + 1) % self.num_units
                 self.current_move_index = 0
 
-        # Generate enemy attacks targeting either one grid or a column of 3 grids with 50% probability
+        # Generate enemy attacks targeting either one grid or a column of 3 grids with 20% probability
+        # TODO: This should be on a timer I believe and the units should have the ability to dodge
         self.enemy_attacks = np.zeros((self.grid_size, self.grid_size), dtype=int)
         attack = np.random.choice([0, 1], p=[0.8,0.2]) # 80% chance of no attack
         attack_type = np.random.choice(['single', 'column'], p=[0.8, 0.2]) # 80% chance of single grid attack
@@ -77,6 +82,7 @@ class ArrowmancerEnv(gym.Env):
 
         # Check if units are hit by enemy attacks
         # TODO: Add health points for units and decrement health points when hit
+        # TODO: I also need to create a win condition for the player where they have to defeat the enemy
         done = False
         for pos in self.unit_positions:
             if self.enemy_attacks[pos[0], pos[1]] == 1:
@@ -148,38 +154,58 @@ class ArrowmancerEnv(gym.Env):
         return False
 
     def render(self, mode='human'):
-        grid_size = self.grid_size
-        unit_positions = self.unit_positions
-        enemy_attacks = self.enemy_attacks
+        if self.screen is None:
+            pygame.init()
+            screen_width = self.grid_size * self.cell_size + 2 * self.padding
+            screen_height = self.grid_size * self.cell_size + 2 * self.padding + 50 # Extra space for dance pattern info
+            self.screen = pygame.display.set_mode((screen_width, screen_height))
+            pygame.display.set_caption("Arrowmancer")
+        
+        self.screen.fill((255, 255, 255))  # Clear the screen with white color
 
-        # Create a visual representation of the grid
-        grid_str = ""
-        for i in range(grid_size):
-            row_str = ""
-            for j in range(grid_size):
-                cell_str = "."
+        # Grid rendering
+        for i in range(self.grid_size):
+            for j in range(self.grid_size):
+                cell_rect = pygame.Rect(self.padding + j * self.cell_size, self.padding + i * self.cell_size, self.cell_size, self.cell_size)
+                pygame.draw.rect(self.screen, (255, 255, 255), cell_rect)  # Draw cell background
+                pygame.draw.rect(self.screen, (0, 0, 0), cell_rect, 2)  # Draw cell border
                 for k in range(self.num_units):
-                    if (unit_positions[k] == [i, j]).all():
-                        # if dancing unit use different emoji
+                    if (self.unit_positions[k] == [i, j]).all():
+                        # If dancing unit use different emoji
                         if k == self.current_unit:
-                            cell_str = "💃"
+                            self._render_emoji("💃", cell_rect.centerx, cell_rect.centery)
                         else:
-                            cell_str = "🧙‍♀️"
+                            self._render_emoji("🧙‍♀️", cell_rect.centerx, cell_rect.centery)
                         break
-                if enemy_attacks[i, j] == 1:
-                    cell_str = "🟪"
-                row_str += cell_str + " "
-            grid_str += row_str + "\n"
-
-        # Create a visual representation of the dance patterns
+                if self.enemy_attacks[i, j] == 1:
+                    self._render_emoji("🟪", cell_rect.centerx, cell_rect.centery)
+        
+        # Dance pattern info rendering
         unit = self.units[self.current_unit]
-        dance_pattern_str = f"{unit['name']} {unit['level']} Dance Pattern: "
         dance_pattern = dance_patterns[unit['name']][unit['level']]
+        font = pygame.font.Font(None, 24)
+        move_texts = []
         for i, move in enumerate(dance_pattern):
             if i == self.current_move_index:
-                dance_pattern_str += f"[{move}] "
+                move_texts.append(font.render(f"{move}", True, (0, 255, 0)))  # Highlight the current move
             else:
-                dance_pattern_str += f"{move} "
+                move_texts.append(font.render(f"{move}", True, (0, 0, 0)))
 
-        print(grid_str)
-        print(dance_pattern_str)
+        name_text = font.render(f"{unit['name']} {unit['level']} Dance Pattern: ", True, (0, 0, 0))
+        name_rect = name_text.get_rect(x=self.padding, y=self.grid_size * self.cell_size + self.padding + 30)
+        self.screen.blit(name_text, name_rect)
+
+        current_x = name_rect.right + 5
+        for move_text in move_texts:
+            move_rect = move_text.get_rect(x=current_x, y=name_rect.y)
+            self.screen.blit(move_text, move_rect)
+            current_x += move_text.get_width() + 5
+
+        pygame.display.flip()
+
+    # Helper function for emoji rendering
+    def _render_emoji(self, emoji, x, y):
+        font = pygame.font.Font('AppleColorEmoji.ttf', self.cell_size)
+        text = font.render(emoji, True, (0, 0, 0))
+        text_rect = text.get_rect(center=(x, y))
+        self.screen.blit(text, text_rect)
