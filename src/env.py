@@ -13,7 +13,7 @@ class ArrowmancerEnv(gym.Env):
         self.padding = 50 # Padding around the grid
         self.units = units 
         self.num_units = len(units)
-        self.action_space = spaces.Discrete(4)  # 0: Up, 1: Right, 2: Down, 3: Left
+        self.action_space = spaces.Discrete(12)  # (Up, Right, Down, Left) x 3 Units
         self.observation_space = spaces.Dict({
             'grid': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
             'unit_positions': spaces.Box(low=0, high=self.grid_size - 1, shape=(self.num_units, 2), dtype=int),
@@ -38,21 +38,32 @@ class ArrowmancerEnv(gym.Env):
         return self._get_obs()
 
     def step(self, action):
-        # TODO: Need ability to choose which unit to move
-        current_unit_pos = self.unit_positions[self.current_unit]
+        unit = action // 4 # Choose the current unit to move based on the action
+        action = action % 4
+        unit_pos = self.unit_positions[unit]
         # Update the position of the current unit based on the action
         if action == 0:  # Move up
-            new_pos = [current_unit_pos[0] - 1, current_unit_pos[1]]
+            new_pos = [unit_pos[0] - 1, unit_pos[1]]
         elif action == 1:  # Move right
-            new_pos = [current_unit_pos[0], current_unit_pos[1] + 1]
+            new_pos = [unit_pos[0], unit_pos[1] + 1]
         elif action == 2:  # Move down
-            new_pos = [current_unit_pos[0] + 1, current_unit_pos[1]]
+            new_pos = [unit_pos[0] + 1, unit_pos[1]]
         elif action == 3:  # Move left
-            new_pos = [current_unit_pos[0], current_unit_pos[1] - 1]
+            new_pos = [unit_pos[0], unit_pos[1] - 1]
 
         # Check if the new position is valid and update the unit's position
         if self._is_valid_position(new_pos):
-            self.unit_positions[self.current_unit] = new_pos
+            # Check if another unit is present at the new position
+            if self._is_unit_at_position(new_pos):
+                # If so, swap the positions of the two units
+                # TODO: Should only be able to swap if adjacent to an edge
+                for i, pos in enumerate(self.unit_positions):
+                    if (pos == new_pos).all() and i != unit:
+                        self.unit_positions[i] = unit_pos
+                        self.unit_positions[unit] = new_pos
+                        break
+            else:
+                self.unit_positions[unit] = new_pos
 
         # Check if the current unit's dance move is satisfied
         reward = 0
@@ -84,13 +95,14 @@ class ArrowmancerEnv(gym.Env):
         # Check if units are hit by enemy attacks
         # TODO: Add health points for units and decrement health points when hit
         # TODO: I also need to create a win condition for the player where they have to defeat the enemy
-        done = False
+        terminated = False
+        truncated = False
         for pos in self.unit_positions:
             if self.enemy_attacks[pos[0], pos[1]] == 1:
-                done = True
+                terminated = True
                 break
 
-        return self._get_obs(), reward, done, {}
+        return self._get_obs(), reward, terminated, truncated, {}
 
     def _get_obs(self):
         # Update the grid representation with unit positions
@@ -101,7 +113,7 @@ class ArrowmancerEnv(gym.Env):
         current_dance_pattern = dance_patterns[unit['name']][unit['level']]
         # Change tuples to numpy arrays and pad the dance pattern with zeros
         current_dance_pattern = np.array([np.array(np.pad(move, (0, 2 - len(move)),'constant')) for move in current_dance_pattern])
-        # # Pad the dance pattern with zeros to have a fixed length of 6
+        # Pad the dance pattern with zeros to have a fixed length of 6
         current_dance_pattern = np.pad(current_dance_pattern, ((0, 6 - len(current_dance_pattern)), (0, 0)), 'constant')
         return {
             'grid': self.grid,
