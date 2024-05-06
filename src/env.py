@@ -92,12 +92,13 @@ class ArrowmancerEnv(gym.Env):
                     self.current_move_index = 0
 
         else:  # Attack action
+            # TODO: Should only be able to attack if adjacent to enemy
             attack_strength = 0.05 + 0.02 * self.current_move_index  # 5% base strength + 2% increase for combos
             self.enemy_health -= attack_strength
             if self.enemy_health <= 0:
                 reward = 100 - self.time_step  # Higher reward for faster enemy defeat
                 terminated = True
-                return self._get_obs(), reward, terminated, False, {}
+                return self._get_obs()[0], reward, terminated, False, {}
             self.current_unit = (self.current_unit + 1) % self.num_units
             self.current_move_index = 0
 
@@ -133,7 +134,7 @@ class ArrowmancerEnv(gym.Env):
                     reward = -100  # Negative reward for unit defeat
                     break
 
-        return self._get_obs(), reward, terminated, truncated, {}
+        return self._get_obs()[0], reward, terminated, truncated, {}
 
     def _get_obs(self):
         # Update the grid representation with unit positions
