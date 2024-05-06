@@ -13,17 +13,20 @@ class ArrowmancerEnv(gym.Env):
         self.padding = 50 # Padding around the grid
         self.units = units 
         self.num_units = len(units)
+        self.unit_health = np.ones(self.num_units) # Health points for each unit
+        self.current_unit = 0  # Index of the current unit performing the dance
+        self.current_move_index = 0  # Index of the current move in the dance pattern
+
         self.action_space = spaces.Discrete(12)  # (Up, Right, Down, Left) x 3 Units
         self.observation_space = spaces.Dict({
             'grid': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
             'unit_positions': spaces.Box(low=0, high=self.grid_size - 1, shape=(self.num_units, 2), dtype=int),
             'enemy_attacks': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
             'current_unit': spaces.Discrete(self.num_units),
+            'unit_health': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
             'current_move_index': spaces.Discrete(6),
             'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6, 2), dtype=int)
         })
-        self.current_unit = 0  # Index of the current unit performing the dance
-        self.current_move_index = 0  # Index of the current move in the dance pattern
         self.reset()
 
     def reset(self):
@@ -54,7 +57,7 @@ class ArrowmancerEnv(gym.Env):
         # Check if the new position is valid and update the unit's position
         if self._is_valid_position(new_pos):
             # Check if another unit is present at the new position
-            if self._is_unit_at_position(new_pos):
+            if self._is_unit_at_position(new_pos):  # TODO: Method is broken for this use case!! Fix it
                 # If so, swap the positions of the two units
                 # TODO: Should only be able to swap if adjacent to an edge
                 for i, pos in enumerate(self.unit_positions):
@@ -97,10 +100,12 @@ class ArrowmancerEnv(gym.Env):
         # TODO: I also need to create a win condition for the player where they have to defeat the enemy
         terminated = False
         truncated = False
-        for pos in self.unit_positions:
+        for i, pos in enumerate(self.unit_positions):
             if self.enemy_attacks[pos[0], pos[1]] == 1:
-                terminated = True
-                break
+                self.unit_health[i] -= 0.1  # Reduce unit health by 10%
+                if self.unit_health[i] <= 0:
+                    terminated = True
+                    break
 
         return self._get_obs(), reward, terminated, truncated, {}
 
@@ -120,6 +125,7 @@ class ArrowmancerEnv(gym.Env):
             'unit_positions': self.unit_positions,
             'enemy_attacks': self.enemy_attacks,
             'current_unit': self.current_unit,
+            'unit_health': self.unit_health,
             'current_move_index': self.current_move_index,
             'current_dance_pattern': current_dance_pattern
         }, 0 # dummy reward
@@ -201,6 +207,12 @@ class ArrowmancerEnv(gym.Env):
                             self._render_emoji("💃", cell_rect.centerx, cell_rect.centery)
                         else:
                             self._render_emoji("🧙‍♀️", cell_rect.centerx, cell_rect.centery)
+                        health_bar_width = 50
+                        health_bar_height = 10
+                        health_bar_rect = pygame.Rect(cell_rect.centerx - health_bar_width // 2, cell_rect.centery + self.cell_size // 2 - health_bar_height - 5, health_bar_width, health_bar_height)
+                        pygame.draw.rect(self.screen, (255, 0, 0), health_bar_rect)
+                        health_bar_fill_rect = pygame.Rect(health_bar_rect.left, health_bar_rect.top, int(health_bar_width * self.unit_health[k]), health_bar_height)
+                        pygame.draw.rect(self.screen, (0, 255, 0), health_bar_fill_rect)
                         break
                 if self.enemy_attacks[i, j] == 1:
                     self._render_emoji("🟪", cell_rect.centerx, cell_rect.centery)
