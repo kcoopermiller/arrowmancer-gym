@@ -5,9 +5,11 @@
   </picture> 
 </p>
 
-[Gymansium](https://github.com/Farama-Foundation/Gymnasium) RL environment for [Spellbrush](https://spellbrush.com/)'s [Arrowmancer](https://www.arrowmancer.com/) + a simple [Deep Q Learning](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm) (DQN) agent
+[Gymansium](https://github.com/Farama-Foundation/Gymnasium) RL environment for [Spellbrush](https://spellbrush.com/)'s [Arrowmancer](https://www.arrowmancer.com/) + a simple [Deep Q Learning](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm) agent
 
 TODO:
 - [ ] Units can currently attack the enemy from anywhere on grid. Need to change, so they can only attack if adjacent to the enemy
 - [ ] Fix unit swapping
 - [ ] Adjust reward for combos
+
+<img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/adec638c-729d-4c72-9635-3cc7d346a5c4" width="40%" height="40%"/>
