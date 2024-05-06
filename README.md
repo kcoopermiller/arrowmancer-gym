@@ -10,7 +10,8 @@
 <img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/adec638c-729d-4c72-9635-3cc7d346a5c4" width="40%" height="40%"/>
 
 ### TODO
-- [ ] Units can currently attack the enemy from anywhere on grid. Need to change, so they can only attack if adjacent to the enemy
+- [ ] Units can currently attack the enemy from anywhere on the grid. Need to change so they can only attack if adjacent to the enemy
 - [ ] Fix unit swapping
 - [ ] Adjust reward for combos
+- [ ] Add abilities and passives
 
