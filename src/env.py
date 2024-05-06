@@ -69,7 +69,7 @@ class ArrowmancerEnv(gym.Env):
             # Check if the new position is valid and update the unit's position
             if self._is_valid_position(new_pos):
                 # Check if another unit is present at the new position
-                if self._is_unit_at_position(new_pos):  # TODO: Method is broken for this use case!! Fix it
+                if self._is_unit_at_position(new_pos, unit):
                     # If so, swap the positions of the two units
                     # TODO: Should only be able to swap if adjacent to an edge
                     for i, pos in enumerate(self.unit_positions):
@@ -81,7 +81,7 @@ class ArrowmancerEnv(gym.Env):
                     self.unit_positions[unit] = new_pos
 
             # Check if the current unit's dance move is satisfied
-            unit = self.units[self.current_unit]
+            unit = self.units[self.current_unit] # Get the current unit's dance pattern info
             move = dance_patterns[unit['name']][unit['level']][self.current_move_index]
             if self._check_dance_move(move):
                 reward = 1 + 0.1 * self.current_move_index  # 10% increase for combos
@@ -172,7 +172,7 @@ class ArrowmancerEnv(gym.Env):
         current_pos = self.unit_positions[self.current_unit]
         target_pos = current_pos + self._offset_to_position(move)
         # Check if the target position is valid and if a unit is present at that position
-        return self._is_valid_position(target_pos) and self._is_unit_at_position(target_pos)
+        return self._is_valid_position(target_pos) and self._is_unit_at_position(target_pos, self.current_unit)
 
     def _check_anchor_move(self, move):
         current_pos = self.unit_positions[self.current_unit]
@@ -199,10 +199,10 @@ class ArrowmancerEnv(gym.Env):
         # Check if the given position is within the grid boundaries
         return 0 <= pos[0] < self.grid_size and 0 <= pos[1] < self.grid_size
 
-    def _is_unit_at_position(self, pos):
-        # Check if a unit (other than the current unit) is present at the given position
+    def _is_unit_at_position(self, pos, unit):
+        # Check if a unit (other than the passed unit) is present at the given position
         for i, unit_pos in enumerate(self.unit_positions):
-            if i != self.current_unit and (unit_pos == pos).all():
+            if i != unit and (unit_pos == pos).all():
                 return True
         return False
 
