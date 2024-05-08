@@ -231,15 +231,15 @@ class ArrowmancerEnv(gym.Env):
                 pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
 
                 if self.enemy_attacks[i, j] > 0:
-                    self._render_emoji("🟪", cell_rect.centerx, cell_rect.centery)
+                    self._render_svg("assets/purple.svg", cell_rect.centerx, cell_rect.centery)
 
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
                         # If dancing unit use different emoji
                         if k == self.current_unit:
-                            self._render_emoji("💃", cell_rect.centerx, cell_rect.centery)
+                            self._render_svg("assets/dancer.svg", cell_rect.centerx, cell_rect.centery)
                         else:
-                            self._render_emoji("🧙‍♀️", cell_rect.centerx, cell_rect.centery)
+                            self._render_svg("assets/witch.svg", cell_rect.centerx, cell_rect.centery)
                         health_bar_width = 50
                         health_bar_height = 10
                         health_bar_rect = pygame.Rect(cell_rect.centerx - health_bar_width // 2, cell_rect.centery + self.cell_size // 2 - health_bar_height - 5, health_bar_width, health_bar_height)
@@ -251,7 +251,7 @@ class ArrowmancerEnv(gym.Env):
         # Enemy rendering
         enemy_x = (self.grid_size * self.cell_size) // 2 + self.padding
         enemy_y = self.padding + 10 
-        self._render_emoji("🤓", enemy_x, enemy_y)
+        self._render_svg("assets/nerd.svg", enemy_x, enemy_y)
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
@@ -282,9 +282,9 @@ class ArrowmancerEnv(gym.Env):
 
         pygame.display.flip()
 
-    # Helper function for emoji rendering
-    def _render_emoji(self, emoji, x, y):
-        font = pygame.font.Font('AppleColorEmoji.ttf', self.cell_size)
-        text = font.render(emoji, True, (0, 0, 0))
-        text_rect = text.get_rect(center=(x, y))
-        self.screen.blit(text, text_rect)
+    # Helper function for SVG rendering
+    def _render_svg(self, file_path, x, y):
+        svg_surface = pygame.image.load(file_path)
+        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size, self.cell_size))
+        svg_rect = svg_surface.get_rect(center=(x, y))
+        self.screen.blit(svg_surface, svg_rect)

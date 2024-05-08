@@ -14,4 +14,7 @@
 - [ ] Fix unit swapping
 - [ ] Adjust reward for combos
 - [ ] Add abilities and passives
+- [ ] Beautify PyGame environment
 
+
+Emojis come from https://openmoji.org/
