@@ -12,7 +12,23 @@
 > [!WARNING]  
 > Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not working as intended at the moment.
 
-### TODO
+## Getting Started
+
+This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging.
+
+```shell
+# Clone the repository
+git clone https://github.com/kcoopermiller/arrowmancer-gym.git
+cd arrowmancer-gym
+
+# Install dependencies
+poetry install
+
+# Run project
+poetry run python main.py
+```
+
+## Roadmap
 - [ ] Getting started section of readme
 - [ ] Units can currently attack the enemy from anywhere on the grid. Need to change so they can only attack if adjacent to the enemy
 - [ ] Fix unit swapping
