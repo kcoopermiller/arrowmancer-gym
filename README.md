@@ -9,12 +9,17 @@
 
 <img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/adec638c-729d-4c72-9635-3cc7d346a5c4" width="40%" height="40%"/>
 
+> [!WARNING]  
+> Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not working as intended at the moment.
+
 ### TODO
+- [ ] Getting started section of readme
 - [ ] Units can currently attack the enemy from anywhere on the grid. Need to change so they can only attack if adjacent to the enemy
 - [ ] Fix unit swapping
 - [ ] Adjust reward for combos
-- [ ] Add abilities and passives
+- [ ] Add character abilities, passives, stats, etc.
 - [ ] Beautify PyGame environment
+- [ ] More accurate action space (ex: ability to move multiple units at once)
 
 
 Emojis come from https://openmoji.org/

@@ -2,13 +2,12 @@ from src import ArrowmancerEnv, Agent
 import torch
 import time
 
-
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     units = [
-        {'name': 'Capricorn', 'level': '4A'}, 
-        {'name': 'Aquarius', 'level': '5'}, 
-        {'name': 'Pisces', 'level': 'Alt'}, 
+        {'name': 'Celine', 'banner': 'standard'}, 
+        {'name': 'Bonny', 'banner': 'standard'}, 
+        {'name': 'Zorn', 'banner': 'standard'}, 
     ] 
     env = ArrowmancerEnv(units)
     agent = Agent(env, units)

@@ -3,6 +3,7 @@ from gymnasium import spaces
 import numpy as np
 from .dance import dance_patterns
 import pygame
+import pandas as pd
 
 class ArrowmancerEnv(gym.Env):
     def __init__(self, units):
@@ -13,7 +14,7 @@ class ArrowmancerEnv(gym.Env):
         self.padding = 75 # Padding around the grid
         self.time_step = 0
         self.enemy_attack_delay = 3  # Number of time steps before enemy attack activates
-        self.units = units 
+        self.units = self._get_units(units) 
         self.num_units = len(units)
         self.unit_health = np.ones(self.num_units) # Health points for each unit
         self.enemy_health = 1
@@ -82,12 +83,12 @@ class ArrowmancerEnv(gym.Env):
 
             # Check if the current unit's dance move is satisfied
             unit = self.units[self.current_unit] # Get the current unit's dance pattern info
-            move = dance_patterns[unit['name']][unit['level']][self.current_move_index]
+            move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
                 reward = 1 + 0.1 * self.current_move_index  # 10% increase for combos
                 self.current_move_index += 1
                 # Move to the next unit if the current unit has completed all dance moves
-                if self.current_move_index >= len(dance_patterns[unit['name']][unit['level']]):
+                if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
                     self.current_unit = (self.current_unit + 1) % self.num_units
                     self.current_move_index = 0
 
@@ -142,7 +143,7 @@ class ArrowmancerEnv(gym.Env):
         for pos in self.unit_positions:
             self.grid[pos[0], pos[1]] = 1
         unit = self.units[self.current_unit]
-        current_dance_pattern = dance_patterns[unit['name']][unit['level']]
+        current_dance_pattern = dance_patterns[unit['zodiac']][unit['dance']]
         # Change tuples to numpy arrays and pad the dance pattern with zeros
         current_dance_pattern = np.array([np.array(np.pad(move, (0, 2 - len(move)),'constant')) for move in current_dance_pattern])
         # Pad the dance pattern with zeros to have a fixed length of 6
@@ -207,6 +208,19 @@ class ArrowmancerEnv(gym.Env):
                 return True
         return False
 
+    def _get_units(self, units):
+        # Get dance pattern info for each unit from the banner data
+        for unit in units:
+            df = pd.read_csv(f"assets/{unit['banner']}_banners/{unit['banner']}_banners.csv")
+            if unit['name'] not in df['Name'].values:
+                raise ValueError(f"Unit {unit['name']} not found in {unit['banner']} banners. Currently not supported: Curry XIII, Scarletti, Saika, Linnaeus, Clover, Marilyn")
+            else:
+                unit['zodiac'] = df[df['Name'] == unit['name']]['Zodiac'].values[0]
+                unit['dance'] = df[df['Name'] == unit['name']]['Dance'].values[0]
+                unit['health'] = df[df['Name'] == unit['name']]['HP'].values[0]
+                unit['attack'] = df[df['Name'] == unit['name']]['Atk'].values[0]
+        return units
+    
     def render(self, mode='human'):
         if self.screen is None:
             pygame.init()
@@ -231,15 +245,11 @@ class ArrowmancerEnv(gym.Env):
                 pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
 
                 if self.enemy_attacks[i, j] > 0:
-                    self._render_svg("assets/purple.svg", cell_rect.centerx, cell_rect.centery)
+                    self._render_img("assets/purple.svg", cell_rect.centerx, cell_rect.centery)
 
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
-                        # If dancing unit use different emoji
-                        if k == self.current_unit:
-                            self._render_svg("assets/dancer.svg", cell_rect.centerx, cell_rect.centery)
-                        else:
-                            self._render_svg("assets/witch.svg", cell_rect.centerx, cell_rect.centery)
+                        self._render_img(f"assets/standard_banners/images/{self.units[k]['name'].lower()}.png", cell_rect.centerx, cell_rect.centery)
                         health_bar_width = 50
                         health_bar_height = 10
                         health_bar_rect = pygame.Rect(cell_rect.centerx - health_bar_width // 2, cell_rect.centery + self.cell_size // 2 - health_bar_height - 5, health_bar_width, health_bar_height)
@@ -251,7 +261,7 @@ class ArrowmancerEnv(gym.Env):
         # Enemy rendering
         enemy_x = (self.grid_size * self.cell_size) // 2 + self.padding
         enemy_y = self.padding + 10 
-        self._render_svg("assets/nerd.svg", enemy_x, enemy_y)
+        self._render_img("assets/nerd.svg", enemy_x, enemy_y)
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
@@ -261,7 +271,7 @@ class ArrowmancerEnv(gym.Env):
         
         # Dance pattern info rendering
         unit = self.units[self.current_unit]
-        dance_pattern = dance_patterns[unit['name']][unit['level']]
+        dance_pattern = dance_patterns[unit['zodiac']][unit['dance']]
         font = pygame.font.Font(None, 32)
         move_texts = []
         for i, move in enumerate(dance_pattern):
@@ -270,21 +280,21 @@ class ArrowmancerEnv(gym.Env):
             else:
                 move_texts.append(font.render(f"{move}", True, (62, 80, 86)))
 
-        name_text = font.render(f"{unit['name']} {unit['level']} Dance Pattern: ", True, (62, 80, 86))
-        name_rect = name_text.get_rect(x=self.padding, y=grid_top + self.grid_size * self.cell_size + 20) # Adjust the dance pattern info position
-        self.screen.blit(name_text, name_rect)
+        zodiac_text = font.render(f"{unit['zodiac']} {unit['dance']} Dance Pattern: ", True, (62, 80, 86))
+        zodiac_rect = zodiac_text.get_rect(x=self.padding, y=grid_top + self.grid_size * self.cell_size + 20) # Adjust the dance pattern info position
+        self.screen.blit(zodiac_text, zodiac_rect)
 
-        current_x = name_rect.right + 5
+        current_x = zodiac_rect.right + 5
         for move_text in move_texts:
-            move_rect = move_text.get_rect(x=current_x, y=name_rect.y)
+            move_rect = move_text.get_rect(x=current_x, y=zodiac_rect.y)
             self.screen.blit(move_text, move_rect)
             current_x += move_text.get_width() + 5
 
         pygame.display.flip()
 
-    # Helper function for SVG rendering
-    def _render_svg(self, file_path, x, y):
+    # Helper function for image rendering
+    def _render_img(self, file_path, x, y):
         svg_surface = pygame.image.load(file_path)
-        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size, self.cell_size))
+        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size * 0.8, self.cell_size * 0.8))
         svg_rect = svg_surface.get_rect(center=(x, y))
         self.screen.blit(svg_surface, svg_rect)

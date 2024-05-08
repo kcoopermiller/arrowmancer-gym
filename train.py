@@ -105,10 +105,10 @@ def train(agent, num_episodes):
 
 if __name__ == "__main__":
     units = [
-        {'name': 'Capricorn', 'level': '4A'}, 
-        {'name': 'Aquarius', 'level': '5'}, 
-        {'name': 'Pisces', 'level': 'Alt'}, 
-    ]
+        {'name': 'arc', 'zodiac': 'Capricorn', 'dance': '4A'}, 
+        {'name': 'bonny', 'zodiac': 'Aquarius', 'dance': '5'}, 
+        {'name': 'zorn', 'zodiac': 'Pisces', 'dance': 'Alt'}, 
+    ] 
     env = ArrowmancerEnv(units)
     agent = Agent(env, units)
     train(agent, num_episodes=1000)
