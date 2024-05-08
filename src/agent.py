@@ -68,6 +68,7 @@ class Agent:
                                 obs['time_step'],
                                 [obs['current_unit']],
                                 obs['unit_health'],
+                                obs['unit_attack'],
                                 obs['enemy_health'],
                                 [obs['current_move_index']],
                                 obs['current_dance_pattern'].flatten()))

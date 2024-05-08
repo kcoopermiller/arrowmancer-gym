@@ -16,8 +16,9 @@ class ArrowmancerEnv(gym.Env):
         self.enemy_attack_delay = 3  # Number of time steps before enemy attack activates
         self.units = self._get_units(units) 
         self.num_units = len(units)
-        self.unit_health = np.ones(self.num_units) # Health points for each unit
-        self.enemy_health = 1
+        self.unit_health = np.array([unit['health'] for unit in self.units])
+        self.unit_attack = np.array([unit['attack'] for unit in self.units])
+        self.enemy_health = 750
         self.current_unit = 0  # Index of the current unit performing the dance
         self.current_move_index = 0  # Index of the current move in the dance pattern
 
@@ -28,8 +29,9 @@ class ArrowmancerEnv(gym.Env):
             'enemy_attacks': spaces.Box(low=0, high=3, shape=(self.grid_size, self.grid_size), dtype=int),
             'time_step': spaces.Box(low=0, high=np.inf, shape=(1,), dtype=int),
             'current_unit': spaces.Discrete(self.num_units),
-            'unit_health': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
-            'enemy_health': spaces.Box(low=0, high=1, shape=(1,), dtype=float),
+            'unit_health': spaces.Box(low=0, high=max(self.unit_health), shape=(self.num_units,), dtype=float),
+            'unit_attack': spaces.Box(low=0, high=max(self.unit_attack), shape=(self.num_units,), dtype=float),
+            'enemy_health': spaces.Box(low=0, high=750, shape=(1,), dtype=float),
             'current_move_index': spaces.Discrete(6),
             'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6, 2), dtype=int)
         })
@@ -42,8 +44,8 @@ class ArrowmancerEnv(gym.Env):
         # Randomly initialize unit positions on the grid
         self.unit_positions = np.random.randint(0, self.grid_size, size=(self.num_units, 2))
         # Reset health points
-        self.unit_health = np.ones(self.num_units) 
-        self.enemy_health = 1
+        self.unit_health = np.array([unit['health'] for unit in self.units])
+        self.enemy_health = 750
         # Reset enemy attacks to an empty state
         self.enemy_attacks = np.zeros((self.grid_size, self.grid_size), dtype=int)
         self.current_unit = 0  # Reset the current unit to the first unit
@@ -85,7 +87,7 @@ class ArrowmancerEnv(gym.Env):
             unit = self.units[self.current_unit] # Get the current unit's dance pattern info
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
-                # reward = 1 + 0.1 * self.current_move_index  # 10% increase for combos
+                reward += 0.25 * (self.current_move_index + 1)
                 self.current_move_index += 1
                 # Move to the next unit if the current unit has completed all dance moves
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
@@ -93,9 +95,9 @@ class ArrowmancerEnv(gym.Env):
                     self.current_move_index = 0
 
         else:  # Attack action
-            if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is in the center of the grid
-                attack_strength = 0.05 + 0.02 * self.current_move_index  # 5% base strength + 2% increase for combos
-                reward = 1 + 0.1 * self.current_move_index  # 10% increase for combos
+            if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.1 * self.current_move_index) # Scale by 100 and add 10% bonus for each combo move completed
+                reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
                     reward = 100 - self.time_step  # Higher reward for faster enemy defeat
@@ -111,8 +113,8 @@ class ArrowmancerEnv(gym.Env):
         # Decrement the delay for existing enemy attacks
         self.enemy_attacks = np.where(self.enemy_attacks > 0, self.enemy_attacks - 1, 0)        
         # Generate enemy attacks targeting either one grid or a column of 3 grids
-        attack = np.random.choice([0, 1], p=[0.7, 0.3])  # 70% chance of no attack
-        attack_type = np.random.choice(['single', 'column'], p=[0.8, 0.2])  # 80% chance of single grid attack
+        attack = np.random.choice([0, 1], p=[0.65, 0.35])  # 65% chance of no attack
+        attack_type = np.random.choice(['single', 'column'], p=[0.75, 0.25])  # 75% chance of single grid attack
         if attack:
             if attack_type == 'single':
                 # Attack a single random grid
@@ -128,8 +130,8 @@ class ArrowmancerEnv(gym.Env):
         truncated = False
         for i, pos in enumerate(self.unit_positions):
             if self.enemy_attacks[pos[0], pos[1]] == 1:
-                self.unit_health[i] -= 0.1  # Reduce unit health by 10%
-                reward -= 0.1  # Penalty for unit hit
+                self.unit_health[i] -= 100 # Reduce unit health
+                reward -= 1  # Penalty for unit hit
                 self.enemy_attacks[pos[0], pos[1]] = 0 # Reset the enemy attack
                 if self.unit_health[i] <= 0:
                     terminated = True
@@ -156,6 +158,7 @@ class ArrowmancerEnv(gym.Env):
             'time_step': np.array([self.time_step]), # Convert scalar to numpy array for consistency
             'current_unit': self.current_unit,
             'unit_health': self.unit_health,
+            'unit_attack': self.unit_attack,
             'enemy_health': np.array([self.enemy_health]), # Ditto
             'current_move_index': self.current_move_index,
             'current_dance_pattern': current_dance_pattern
@@ -246,28 +249,28 @@ class ArrowmancerEnv(gym.Env):
                 pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
 
                 if self.enemy_attacks[i, j] > 0:
-                    self._render_img("assets/purple.svg", cell_rect.centerx, cell_rect.centery)
+                    self._render_img("assets/purple.svg", cell_rect.centerx, cell_rect.centery, 1)
 
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
-                        self._render_img(f"assets/standard_banners/images/{self.units[k]['name'].lower()}.png", cell_rect.centerx, cell_rect.centery)
+                        self._render_img(f"assets/standard_banners/images/{self.units[k]['name'].lower()}.png", cell_rect.centerx, cell_rect.centery, 0.8)
                         health_bar_width = 50
                         health_bar_height = 10
                         health_bar_rect = pygame.Rect(cell_rect.centerx - health_bar_width // 2, cell_rect.centery + self.cell_size // 2 - health_bar_height - 5, health_bar_width, health_bar_height)
                         pygame.draw.rect(self.screen, (255, 0, 0), health_bar_rect)
-                        health_bar_fill_rect = pygame.Rect(health_bar_rect.left, health_bar_rect.top, int(health_bar_width * self.unit_health[k]), health_bar_height)
+                        health_bar_fill_rect = pygame.Rect(health_bar_rect.left, health_bar_rect.top, int(health_bar_width * (self.unit_health[k] / self.units[k]['health'])), health_bar_height)
                         pygame.draw.rect(self.screen, (0, 255, 0), health_bar_fill_rect)
                         break
         
         # Enemy rendering
         enemy_x = (self.grid_size * self.cell_size) // 2 + self.padding
         enemy_y = self.padding + 10 
-        self._render_img("assets/nerd.svg", enemy_x, enemy_y)
+        self._render_img("assets/nerd.svg", enemy_x, enemy_y, 0.8)
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
         pygame.draw.rect(self.screen, (255, 0, 0), enemy_health_bar_rect)
-        enemy_health_bar_fill_rect = pygame.Rect(enemy_health_bar_rect.left, enemy_health_bar_rect.top, int(enemy_health_bar_width * self.enemy_health), enemy_health_bar_height)
+        enemy_health_bar_fill_rect = pygame.Rect(enemy_health_bar_rect.left, enemy_health_bar_rect.top, int(enemy_health_bar_width * (self.enemy_health / 1000)), enemy_health_bar_height)
         pygame.draw.rect(self.screen, (0, 255, 0), enemy_health_bar_fill_rect)
         
         # Dance pattern info rendering
@@ -294,8 +297,8 @@ class ArrowmancerEnv(gym.Env):
         pygame.display.flip()
 
     # Helper function for image rendering
-    def _render_img(self, file_path, x, y):
+    def _render_img(self, file_path, x, y, scale):
         svg_surface = pygame.image.load(file_path)
-        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size * 0.8, self.cell_size * 0.8))
+        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size * scale, self.cell_size * scale))
         svg_rect = svg_surface.get_rect(center=(x, y))
         self.screen.blit(svg_surface, svg_rect)

@@ -24,13 +24,15 @@ cd arrowmancer-gym
 # Install dependencies
 poetry install
 
+# Train model
+poetry run python train.py
+
 # Run project
 poetry run python main.py
 ```
 
 ## Roadmap
 - [ ] Fix unit swapping
-- [ ] Adjust reward for combos
 - [ ] Add character abilities, passives, stats, etc.
 - [ ] Beautify PyGame environment
 - [ ] More accurate action space (ex: ability to move multiple units at once)
