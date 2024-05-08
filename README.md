@@ -10,7 +10,7 @@
 <img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/adec638c-729d-4c72-9635-3cc7d346a5c4" width="40%" height="40%"/>
 
 > [!WARNING]  
-> Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not working as intended at the moment.
+> Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not work as intended at the moment.
 
 ## Getting Started
 
