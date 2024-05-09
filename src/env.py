@@ -11,7 +11,6 @@ class ArrowmancerEnv(gym.Env):
         self.grid_size = 3  # 3x3
         self.cell_size = 200  # 200x200 pixels
         self.screen = None
-        self.padding = 75 # Padding around the grid
         self.time_step = 0
         self.enemy_attack_delay = 3  # Number of time steps before enemy attack activates
         self.units = self._get_units(units) 
@@ -87,16 +86,17 @@ class ArrowmancerEnv(gym.Env):
             unit = self.units[self.current_unit] # Get the current unit's dance pattern info
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
-                reward += 0.25 * (self.current_move_index + 1)
+                reward += 0.3 * (self.current_move_index + 1)
                 self.current_move_index += 1
                 # Move to the next unit if the current unit has completed all dance moves
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
+                    reward += 5  # Bonus for completing the dance pattern
                     self.current_unit = (self.current_unit + 1) % self.num_units
                     self.current_move_index = 0
 
         else:  # Attack action
             if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
-                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.1 * self.current_move_index) # Scale by 100 and add 10% bonus for each combo move completed
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.2 * self.current_move_index) # Scale by 100 and add 20% bonus for each combo move completed
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
@@ -131,7 +131,7 @@ class ArrowmancerEnv(gym.Env):
         for i, pos in enumerate(self.unit_positions):
             if self.enemy_attacks[pos[0], pos[1]] == 1:
                 self.unit_health[i] -= 100 # Reduce unit health
-                reward -= 1  # Penalty for unit hit
+                reward -= 5  # Penalty for unit hit
                 self.enemy_attacks[pos[0], pos[1]] = 0 # Reset the enemy attack
                 if self.unit_health[i] <= 0:
                     terminated = True
@@ -216,7 +216,7 @@ class ArrowmancerEnv(gym.Env):
         # Get dance pattern info for each unit from the banner data
         for unit in units:
             df = pd.read_csv(f"assets/{unit['banner']}_banners/{unit['banner']}_banners.csv")
-            if unit['name'] not in df['Name'].values:
+            if unit['name'] not in df['Name'].values or unit['name'] in ['Curry XIII', 'Scarletti', 'Saika', 'Linnaeus', 'Clover', 'Marilyn']:
                 raise ValueError(f"Unit {unit['name']} not found in {unit['banner']} banners. Currently not supported: Curry XIII, Scarletti, Saika, Linnaeus, Clover, Marilyn")
             else:
                 unit['zodiac'] = df[df['Name'] == unit['name']]['Zodiac'].values[0]
@@ -226,20 +226,22 @@ class ArrowmancerEnv(gym.Env):
         return units
     
     def render(self, mode='human'):
+        padding = 75 # Padding around the grid
+        screen_width = self.grid_size * self.cell_size + 2 * padding
+        screen_height = self.grid_size * self.cell_size + 2 * padding + 200  # Extra space for dance pattern info and enemy
         if self.screen is None:
             pygame.init()
-            screen_width = self.grid_size * self.cell_size + 2 * self.padding
-            screen_height = self.grid_size * self.cell_size + 2 * self.padding + 100  # Extra space for dance pattern info and enemy
             self.screen = pygame.display.set_mode((screen_width, screen_height))
             pygame.display.set_caption("Arrowmancer")
         
         self.screen.fill((130, 139, 115)) # Fill the screen with a light green color
 
         # Grid rendering
-        grid_top = self.padding + 100  # Add extra space above the grid
+        grid_top = padding + 100  # Add extra space above the grid 
+        grid_bottom = grid_top + self.grid_size * self.cell_size
         for i in range(self.grid_size):
             for j in range(self.grid_size):
-                cell_rect = pygame.Rect(self.padding + j * self.cell_size, grid_top + i * self.cell_size, self.cell_size, self.cell_size)
+                cell_rect = pygame.Rect(padding + j * self.cell_size, grid_top + i * self.cell_size, self.cell_size, self.cell_size)
                 pygame.draw.rect(self.screen, (75, 68, 60), cell_rect)  # Draw cell background
                 pygame.draw.rect(self.screen, (130, 139, 115), cell_rect, 2)  # Draw cell border                
                 
@@ -249,7 +251,7 @@ class ArrowmancerEnv(gym.Env):
                 pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
 
                 if self.enemy_attacks[i, j] > 0:
-                    self._render_img("assets/purple.svg", cell_rect.centerx, cell_rect.centery, 1)
+                    self._render_img("assets/emojis/purple.svg", cell_rect.centerx, cell_rect.centery, 1)
 
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
@@ -263,29 +265,52 @@ class ArrowmancerEnv(gym.Env):
                         break
         
         # Enemy rendering
-        enemy_x = (self.grid_size * self.cell_size) // 2 + self.padding
-        enemy_y = self.padding + 10 
-        self._render_img("assets/nerd.svg", enemy_x, enemy_y, 0.8)
+        enemy_x = (self.grid_size * self.cell_size) // 2 + padding
+        enemy_y = padding + 10 
+        self._render_img("assets/emojis/nerd.svg", enemy_x, enemy_y, 0.8)
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
         pygame.draw.rect(self.screen, (255, 0, 0), enemy_health_bar_rect)
-        enemy_health_bar_fill_rect = pygame.Rect(enemy_health_bar_rect.left, enemy_health_bar_rect.top, int(enemy_health_bar_width * (self.enemy_health / 1000)), enemy_health_bar_height)
+        enemy_health_bar_fill_rect = pygame.Rect(enemy_health_bar_rect.left, enemy_health_bar_rect.top, int(enemy_health_bar_width * (self.enemy_health / 750)), enemy_health_bar_height)
         pygame.draw.rect(self.screen, (0, 255, 0), enemy_health_bar_fill_rect)
-        
-        # Dance pattern info rendering
+
+        # Combo and dance pattern box rendering
         unit = self.units[self.current_unit]
+        font = pygame.font.Font(None, 40)
+        combo_box_width = self.grid_size * self.cell_size
+        combo_box_height = screen_height - grid_bottom - padding
+        combo_box_x = padding
+        combo_box_y = grid_bottom + padding  # Adjust the position below the grid with padding
+        combo_box_rect = pygame.Rect(combo_box_x, combo_box_y, combo_box_width, combo_box_height)
+        pygame.draw.rect(self.screen, (86,114,125), combo_box_rect)
+
+        unit_image = pygame.image.load(f"assets/standard_banners/images/{unit['name'].lower()}.png")
+        unit_image = pygame.transform.scale(unit_image, (combo_box_height, combo_box_height))
+        unit_rect = unit_image.get_rect(left=combo_box_rect.left, centery=combo_box_rect.centery)
+        self.screen.blit(unit_image, unit_rect)
+
+        # Draw the pink border on three sides (top, left, right)
+        pygame.draw.line(self.screen, (242,149,245), (combo_box_rect.left, combo_box_rect.top), (combo_box_rect.right, combo_box_rect.top), 5)
+        pygame.draw.line(self.screen, (242,149,245), (combo_box_rect.left, combo_box_rect.top), (combo_box_rect.left, combo_box_rect.bottom), 5)
+        pygame.draw.line(self.screen, (242,149,245), (combo_box_rect.right, combo_box_rect.top), (combo_box_rect.right, combo_box_rect.bottom), 5)
+
+        combo_text = font.render(f"COMBO {self.current_move_index}", True, (149,185,148))
+        combo_text_rect = combo_text.get_rect(left=unit_rect.right + 20, centery=combo_box_rect.centery)      
+        self.screen.blit(combo_text, combo_text_rect)
+
+        # Dance pattern info rendering
+        font = pygame.font.Font(None, 24)
         dance_pattern = dance_patterns[unit['zodiac']][unit['dance']]
-        font = pygame.font.Font(None, 32)
         move_texts = []
         for i, move in enumerate(dance_pattern):
             if i == self.current_move_index:
-                move_texts.append(font.render(f"{move}", True, (0, 255, 255))) # Highlight the current move
+                move_texts.append(font.render(f"{move}", True, (56,239,195))) # Highlight the current move
             else:
-                move_texts.append(font.render(f"{move}", True, (62, 80, 86)))
+                move_texts.append(font.render(f"{move}", True, (149,185,148)))
 
-        zodiac_text = font.render(f"{unit['zodiac']} {unit['dance']} Dance Pattern: ", True, (62, 80, 86))
-        zodiac_rect = zodiac_text.get_rect(x=self.padding, y=grid_top + self.grid_size * self.cell_size + 20) # Adjust the dance pattern info position
+        zodiac_text = font.render(f"{unit['zodiac']} {unit['dance']} Dance Pattern: ", True, (149,185,148))
+        zodiac_rect = zodiac_text.get_rect(left=unit_rect.right + 20, top=combo_text_rect.bottom + 10)
         self.screen.blit(zodiac_text, zodiac_rect)
 
         current_x = zodiac_rect.right + 5
