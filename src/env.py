@@ -23,15 +23,13 @@ class ArrowmancerEnv(gym.Env):
 
         self.action_space = spaces.Discrete(15)  # (Up, Right, Down, Left, Attack) x 3 Units
         self.observation_space = spaces.Dict({
-            'grid': spaces.Box(low=0, high=1, shape=(self.grid_size, self.grid_size), dtype=int),
-            'unit_positions': spaces.Box(low=0, high=self.grid_size - 1, shape=(self.num_units, 2), dtype=int),
-            'enemy_attacks': spaces.Box(low=0, high=3, shape=(self.grid_size, self.grid_size), dtype=int),
+            'grid': spaces.Box(low=-3, high=3, shape=(self.grid_size, self.grid_size, 2), dtype=int), # Grid with unit and enemy attack positions
             'time_step': spaces.Box(low=0, high=np.inf, shape=(1,), dtype=int),
-            'current_unit': spaces.Discrete(self.num_units),
-            'unit_health': spaces.Box(low=0, high=max(self.unit_health), shape=(self.num_units,), dtype=float),
-            'unit_attack': spaces.Box(low=0, high=max(self.unit_attack), shape=(self.num_units,), dtype=float),
-            'enemy_health': spaces.Box(low=0, high=750, shape=(1,), dtype=float),
-            'current_move_index': spaces.Discrete(6),
+            'unit_health': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
+            # 'unit_attack': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
+            'enemy_health': spaces.Box(low=0, high=1, shape=(1,), dtype=float),
+            'current_unit': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=int),
+            'current_move_index': spaces.Box(low=0, high=1, shape=(6,), dtype=int),
             'current_dance_pattern': spaces.Box(low=-13, high=13, shape=(6, 2), dtype=int)
         })
         self.reset()
@@ -39,7 +37,7 @@ class ArrowmancerEnv(gym.Env):
     def reset(self):
         self.time_step = 0
         # Reset the grid to an empty state
-        self.grid = np.zeros((self.grid_size, self.grid_size), dtype=int)
+        self.grid = np.zeros((self.grid_size, self.grid_size, 2), dtype=int)
         # Randomly initialize unit positions on the grid
         positions = np.array(list(np.ndindex(self.grid_size, self.grid_size)))
         self.unit_positions = positions[np.random.choice(len(positions), size=self.num_units, replace=False)]
@@ -87,7 +85,7 @@ class ArrowmancerEnv(gym.Env):
             unit = self.units[self.current_unit] # Get the current unit's dance pattern info
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
-                reward += 0.3 * (self.current_move_index + 1)
+                reward += 0.5 * (self.current_move_index + 1)
                 self.current_move_index += 1
                 # Move to the next unit if the current unit has completed all dance moves
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
@@ -97,7 +95,7 @@ class ArrowmancerEnv(gym.Env):
 
         else:  # Attack action
             if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
-                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.2 * self.current_move_index) # Scale by 100 and add 20% bonus for each combo move completed
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.75 * self.current_move_index) # Scale by 100 and add 75% bonus for each combo move completed
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
@@ -142,10 +140,14 @@ class ArrowmancerEnv(gym.Env):
         return self._get_obs()[0], reward, terminated, truncated, {}
 
     def _get_obs(self):
-        # Update the grid representation with unit positions
+        # Update the grid representation with unit and enemy attack positions
         self.grid.fill(0)
-        for pos in self.unit_positions:
-            self.grid[pos[0], pos[1]] = 1
+        for i, pos in enumerate(self.unit_positions):
+            self.grid[pos[0], pos[1], 0] = i + 1
+        for i, row in enumerate(self.enemy_attacks):
+            for j, attack in enumerate(row):
+                self.grid[i, j, 1] = -attack
+
         unit = self.units[self.current_unit]
         current_dance_pattern = dance_patterns[unit['zodiac']][unit['dance']]
         # Change tuples to numpy arrays and pad the dance pattern with zeros
@@ -154,14 +156,11 @@ class ArrowmancerEnv(gym.Env):
         current_dance_pattern = np.pad(current_dance_pattern, ((0, 6 - len(current_dance_pattern)), (0, 0)), 'constant')
         return {
             'grid': self.grid,
-            'unit_positions': self.unit_positions,
-            'enemy_attacks': self.enemy_attacks,
             'time_step': np.array([self.time_step]), # Convert scalar to numpy array for consistency
-            'current_unit': self.current_unit,
-            'unit_health': self.unit_health,
-            'unit_attack': self.unit_attack,
-            'enemy_health': np.array([self.enemy_health]), # Ditto
-            'current_move_index': self.current_move_index,
+            'unit_health': self.unit_health / max(self.unit_health), # Normalize health values
+            'enemy_health': np.array([self.enemy_health / 750]),
+            'current_unit': np.eye(self.num_units)[self.current_unit], # One-hot encoding of the current unit index
+            'current_move_index': np.eye(6)[self.current_move_index],
             'current_dance_pattern': current_dance_pattern
         }, 0 # Dummy reward
 
@@ -200,7 +199,7 @@ class ArrowmancerEnv(gym.Env):
         # -4 -3 -2         [-1, -1] [-1, 0] [-1, 1]
         # -1  0  1         [0, -1]  [0, 0]  [0, 1]
         # 2  3  4          [1, -1]  [1, 0]  [1, 1]
-        return [(offset + 1) // 3 - 1, (offset + 1) % 3 - 1]
+        return [(offset + 1) // 3, (offset + 1) % 3 - 1]
 
     def _is_valid_position(self, pos):
         # Check if the given position is within the grid boundaries

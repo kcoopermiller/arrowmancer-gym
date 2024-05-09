@@ -6,7 +6,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     units = [
         {'name': 'Celine', 'banner': 'standard'}, 
-        {'name': 'Bonny', 'banner': 'standard'}, 
+        {'name': 'Kepler', 'banner': 'standard'}, 
         {'name': 'Zorn', 'banner': 'standard'}, 
     ] 
     env = ArrowmancerEnv(units)

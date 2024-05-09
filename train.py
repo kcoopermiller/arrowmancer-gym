@@ -106,7 +106,7 @@ def train(agent, num_episodes):
 if __name__ == "__main__":
     units = [
         {'name': 'Celine', 'banner': 'standard'}, 
-        {'name': 'Bonny', 'banner': 'standard'}, 
+        {'name': 'Kepler', 'banner': 'standard'}, 
         {'name': 'Zorn', 'banner': 'standard'}, 
     ] 
     env = ArrowmancerEnv(units)
