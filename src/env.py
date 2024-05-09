@@ -251,11 +251,11 @@ class ArrowmancerEnv(gym.Env):
                 pygame.draw.rect(self.screen, (130, 98, 107), pink_square_rect, 5)
 
                 if self.enemy_attacks[i, j] > 0:
-                    self._render_img("assets/emojis/purple.svg", cell_rect.centerx, cell_rect.centery, 1)
+                    self._render_img("assets/emojis/purple.svg", cell_rect.centerx, cell_rect.centery, (self.cell_size, self.cell_size))
 
                 for k in range(self.num_units):
                     if (self.unit_positions[k] == [i, j]).all():
-                        self._render_img(f"assets/standard_banners/images/{self.units[k]['name'].lower()}.png", cell_rect.centerx, cell_rect.centery, 0.8)
+                        self._render_img(f"assets/standard_banners/images/{self.units[k]['name'].lower()}.png", cell_rect.centerx, cell_rect.centery, (self.cell_size * 0.8, self.cell_size * 0.8))
                         health_bar_width = 50
                         health_bar_height = 10
                         health_bar_rect = pygame.Rect(cell_rect.centerx - health_bar_width // 2, cell_rect.centery + self.cell_size // 2 - health_bar_height - 5, health_bar_width, health_bar_height)
@@ -267,7 +267,7 @@ class ArrowmancerEnv(gym.Env):
         # Enemy rendering
         enemy_x = (self.grid_size * self.cell_size) // 2 + padding
         enemy_y = padding + 10 
-        self._render_img("assets/emojis/nerd.svg", enemy_x, enemy_y, 0.8)
+        self._render_img("assets/emojis/nerd.svg", enemy_x, enemy_y, (self.cell_size * 0.8, self.cell_size * 0.8))
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
@@ -285,6 +285,7 @@ class ArrowmancerEnv(gym.Env):
         combo_box_rect = pygame.Rect(combo_box_x, combo_box_y, combo_box_width, combo_box_height)
         pygame.draw.rect(self.screen, (86,114,125), combo_box_rect)
 
+        # TODO: use image rendering helper function
         unit_image = pygame.image.load(f"assets/standard_banners/images/{unit['name'].lower()}.png")
         unit_image = pygame.transform.scale(unit_image, (combo_box_height, combo_box_height))
         unit_rect = unit_image.get_rect(left=combo_box_rect.left, centery=combo_box_rect.centery)
@@ -300,30 +301,32 @@ class ArrowmancerEnv(gym.Env):
         self.screen.blit(combo_text, combo_text_rect)
 
         # Dance pattern info rendering
-        font = pygame.font.Font(None, 24)
+        font = pygame.font.Font(None, 28)
         dance_pattern = dance_patterns[unit['zodiac']][unit['dance']]
-        move_texts = []
-        for i, move in enumerate(dance_pattern):
-            if i == self.current_move_index:
-                move_texts.append(font.render(f"{move}", True, (56,239,195))) # Highlight the current move
-            else:
-                move_texts.append(font.render(f"{move}", True, (149,185,148)))
 
         zodiac_text = font.render(f"{unit['zodiac']} {unit['dance']} Dance Pattern: ", True, (149,185,148))
         zodiac_rect = zodiac_text.get_rect(left=unit_rect.right + 20, top=combo_text_rect.bottom + 10)
         self.screen.blit(zodiac_text, zodiac_rect)
 
-        current_x = zodiac_rect.right + 5
-        for move_text in move_texts:
-            move_rect = move_text.get_rect(x=current_x, y=zodiac_rect.y)
-            self.screen.blit(move_text, move_rect)
-            current_x += move_text.get_width() + 5
+        current_x = zodiac_rect.right + 12
+        for i, move in enumerate(dance_pattern):
+            for num in move: 
+                if i == self.current_move_index:
+                    move_rect = self._render_img(f"assets/emojis/{num}.svg", current_x, zodiac_rect.y+8, (26, 26), (56,239,195))
+                else:
+                    move_rect = self._render_img(f"assets/emojis/{num}.svg", current_x, zodiac_rect.y+8, (26, 26), (149,185,148))
+                current_x += move_rect.width
+
 
         pygame.display.flip()
 
     # Helper function for image rendering
-    def _render_img(self, file_path, x, y, scale):
-        svg_surface = pygame.image.load(file_path)
-        svg_surface = pygame.transform.scale(svg_surface, (self.cell_size * scale, self.cell_size * scale))
-        svg_rect = svg_surface.get_rect(center=(x, y))
-        self.screen.blit(svg_surface, svg_rect)
+    def _render_img(self, file_path, x, y, size, color=None):
+        img_surface = pygame.image.load(file_path).convert_alpha()
+        if color:
+            img_surface.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGBA_MAX) # Replace every visible pixel with white
+            img_surface.fill(color, special_flags=pygame.BLEND_RGBA_MIN)
+        img_surface = pygame.transform.scale(img_surface, size)
+        img_rect = img_surface.get_rect(center=(x, y))
+        self.screen.blit(img_surface, img_rect)
+        return img_rect
