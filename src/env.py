@@ -41,7 +41,8 @@ class ArrowmancerEnv(gym.Env):
         # Reset the grid to an empty state
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=int)
         # Randomly initialize unit positions on the grid
-        self.unit_positions = np.random.randint(0, self.grid_size, size=(self.num_units, 2))
+        positions = np.array(list(np.ndindex(self.grid_size, self.grid_size)))
+        self.unit_positions = positions[np.random.choice(len(positions), size=self.num_units, replace=False)]
         # Reset health points
         self.unit_health = np.array([unit['health'] for unit in self.units])
         self.enemy_health = 750
