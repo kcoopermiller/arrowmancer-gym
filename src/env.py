@@ -267,7 +267,7 @@ class ArrowmancerEnv(gym.Env):
         # Enemy rendering
         enemy_x = (self.grid_size * self.cell_size) // 2 + padding
         enemy_y = padding + 10 
-        self._render_img("assets/emojis/nerd.svg", enemy_x, enemy_y, (self.cell_size * 0.8, self.cell_size * 0.8))
+        self._render_img("assets/cat.png", enemy_x, enemy_y, (self.cell_size * 0.7, self.cell_size * 0.7))
         enemy_health_bar_width = 100
         enemy_health_bar_height = 10
         enemy_health_bar_rect = pygame.Rect(enemy_x - enemy_health_bar_width // 2, enemy_y + self.cell_size // 3 + 10, enemy_health_bar_width, enemy_health_bar_height)
