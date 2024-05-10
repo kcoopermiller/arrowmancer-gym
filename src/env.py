@@ -12,18 +12,18 @@ class ArrowmancerEnv(gym.Env):
         self.cell_size = 200  # 200x200 pixels
         self.screen = None
         self.time_step = 0
-        self.enemy_attack_delay = 3  # Number of time steps before enemy attack activates
-        self.units = self._get_units(units) 
+        self.enemy_attack_delay = 4  # Number of time steps before enemy attack activates
+        self.units = self._get_units(units)
         self.num_units = len(units)
         self.unit_health = np.array([unit['health'] for unit in self.units])
         self.unit_attack = np.array([unit['attack'] for unit in self.units])
-        self.enemy_health = 750
+        self.enemy_health = 500
         self.current_unit = 0  # Index of the current unit performing the dance
         self.current_move_index = 0  # Index of the current move in the dance pattern
 
         self.action_space = spaces.Discrete(15)  # (Up, Right, Down, Left, Attack) x 3 Units
         self.observation_space = spaces.Dict({
-            'grid': spaces.Box(low=-3, high=3, shape=(self.grid_size, self.grid_size, 2), dtype=int), # Grid with unit and enemy attack positions
+            'grid': spaces.Box(low=-self.enemy_attack_delay, high=self.num_units, shape=(self.grid_size, self.grid_size, 2), dtype=int), # Grid with unit and enemy attack positions
             'time_step': spaces.Box(low=0, high=np.inf, shape=(1,), dtype=int),
             'unit_health': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
             # 'unit_attack': spaces.Box(low=0, high=1, shape=(self.num_units,), dtype=float),
@@ -85,17 +85,17 @@ class ArrowmancerEnv(gym.Env):
             unit = self.units[self.current_unit] # Get the current unit's dance pattern info
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
-                reward += 0.5 * (self.current_move_index + 1)
                 self.current_move_index += 1
+                reward += self.current_move_index
                 # Move to the next unit if the current unit has completed all dance moves
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
-                    reward += 5  # Bonus for completing the dance pattern
+                    reward += 10  # Bonus for completing the dance pattern
                     self.current_unit = (self.current_unit + 1) % self.num_units
                     self.current_move_index = 0
 
         else:  # Attack action
             if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
-                attack_strength = self.unit_attack[unit] * 0.01 * (1 + 0.75 * self.current_move_index) # Scale by 100 and add 75% bonus for each combo move completed
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 2) # Scale by 100 and add 200% bonus for each combo move completed
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
@@ -110,10 +110,11 @@ class ArrowmancerEnv(gym.Env):
         self.time_step += 1
 
         # Decrement the delay for existing enemy attacks
-        self.enemy_attacks = np.where(self.enemy_attacks > 0, self.enemy_attacks - 1, 0)        
+        self.enemy_attacks = np.where(self.enemy_attacks > 0, self.enemy_attacks - 1, 0)
         # Generate enemy attacks targeting either one grid or a column of 3 grids
         attack = np.random.choice([0, 1], p=[0.65, 0.35])  # 65% chance of no attack
-        attack_type = np.random.choice(['single', 'column'], p=[0.75, 0.25])  # 75% chance of single grid attack
+        if attack:
+            attack_type = np.random.choice(['single', 'column'], p=[0.75, 0.25])  # 75% chance of single grid attack
         if attack:
             if attack_type == 'single':
                 # Attack a single random grid
@@ -130,7 +131,7 @@ class ArrowmancerEnv(gym.Env):
         for i, pos in enumerate(self.unit_positions):
             if self.enemy_attacks[pos[0], pos[1]] == 1:
                 self.unit_health[i] -= 100 # Reduce unit health
-                reward -= 5  # Penalty for unit hit
+                reward -= 10  # Penalty for unit hit
                 self.enemy_attacks[pos[0], pos[1]] = 0 # Reset the enemy attack
                 if self.unit_health[i] <= 0:
                     terminated = True
@@ -216,13 +217,14 @@ class ArrowmancerEnv(gym.Env):
         # Get dance pattern info for each unit from the banner data
         for unit in units:
             df = pd.read_csv(f"assets/{unit['banner']}_banners/{unit['banner']}_banners.csv")
-            if unit['name'] not in df['Name'].values or unit['name'] in ['Curry XIII', 'Scarletti', 'Saika', 'Linnaeus', 'Clover', 'Marilyn']:
-                raise ValueError(f"Unit {unit['name']} not found in {unit['banner']} banners. Currently not supported: Curry XIII, Scarletti, Saika, Linnaeus, Clover, Marilyn")
+            if unit['name'] not in df['Name'].values:
+                raise ValueError(f"{unit['name']} not found in {unit['banner']} banners.")
             else:
                 unit['zodiac'] = df[df['Name'] == unit['name']]['Zodiac'].values[0]
                 unit['dance'] = df[df['Name'] == unit['name']]['Dance'].values[0]
                 unit['health'] = df[df['Name'] == unit['name']]['HP'].values[0]
                 unit['attack'] = df[df['Name'] == unit['name']]['Atk'].values[0]
+                unit['name'] = unit['name'].replace(" ", "_") # for Curry XIII
         return units
     
     def render(self, mode='human'):
