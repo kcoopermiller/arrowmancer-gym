@@ -9,9 +9,6 @@
 
 <img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/85710ad0-6eab-40a3-811e-235c546e7493" width="40%" height="40%"/>
 
-> [!WARNING]  
-> Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not work as intended at the moment.
-
 ## Getting Started
 
 This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging.
