@@ -14,8 +14,7 @@
 This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging.
 
 ```shell
-# Clone the repository![arrowmancer_demo](https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/901d87ba-1a78-4b38-9518-a8eb46b94399)
-
+# Clone the repository
 git clone https://github.com/kcoopermiller/arrowmancer-gym.git
 cd arrowmancer-gym
 
