@@ -7,7 +7,7 @@
 
 [Gymansium](https://github.com/Farama-Foundation/Gymnasium) RL environment for [Spellbrush](https://spellbrush.com/)'s [Arrowmancer](https://www.arrowmancer.com/) + a simple [Deep Q Learning](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm) agent
 
-<img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/adec638c-729d-4c72-9635-3cc7d346a5c4" width="40%" height="40%"/>
+<img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/85710ad0-6eab-40a3-811e-235c546e7493" width="40%" height="40%"/>
 
 > [!WARNING]  
 > Currently in the process of adding support for all standard banner witches. `agent.py` and `train.py` may not work as intended at the moment.
@@ -17,7 +17,8 @@
 This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging.
 
 ```shell
-# Clone the repository
+# Clone the repository![arrowmancer_demo](https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/901d87ba-1a78-4b38-9518-a8eb46b94399)
+
 git clone https://github.com/kcoopermiller/arrowmancer-gym.git
 cd arrowmancer-gym
 
