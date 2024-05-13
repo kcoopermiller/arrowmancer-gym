@@ -95,18 +95,17 @@ class ArrowmancerEnv(gym.Env):
 
         else:  # Attack action
             if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
-                attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 2) # Scale by 100 and add 200% bonus for each combo move completed
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 3) # Scale by 100 and add 300% bonus for each combo move completed
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
-                    reward = 100 - self.time_step  # Higher reward for faster enemy defeat
+                    reward = 100 - self.time_step * 0.1 # Higher reward for faster enemy defeat
                     terminated = True
                     return self._get_obs()[0], reward, terminated, False, {}
                 self.current_unit = (self.current_unit + 1) % self.num_units
                 self.current_move_index = 0
 
         # Penalty for each time step
-        reward -= 0.1
         self.time_step += 1
 
         # Decrement the delay for existing enemy attacks
