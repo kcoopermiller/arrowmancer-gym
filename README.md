@@ -21,12 +21,13 @@ cd arrowmancer-gym
 # Install dependencies
 poetry install
 
-# Please refer to help for available commands and options
+# To see available options
 poetry run python main.py --help
 ```
 
-## Roadmap
+## Todo
 - [ ] Fix unit swapping
 - [ ] Add character abilities, passives, stats, etc.
+- [ ] Add PPO and A2C
 
 Emojis come from https://openmoji.org/
