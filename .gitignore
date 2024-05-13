@@ -2,11 +2,8 @@
 .vscode/
 .devcontainer/
 
-# Font
-AppleColorEmoji.ttf
-
 # Model
-model.pth
+Models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

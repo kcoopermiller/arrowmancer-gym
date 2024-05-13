@@ -1,67 +1,30 @@
-# https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm
-
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 import numpy as np
-import random
-import math
-from collections import namedtuple, deque
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using {device} device")
-
-# Define a named tuple for storing transitions in the replay memory
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
-
-class ReplayMemory(object):
-    def __init__(self, capacity):
-        self.memory = deque([], maxlen=capacity)
-
-    def push(self, *args):
-        """Save a transition in the replay memory"""
-        self.memory.append(Transition(*args))
-
-    def sample(self, batch_size):
-        """Sample a batch of transitions from the replay memory"""
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
-
-class DQN(nn.Module):
-    def __init__(self, n_observations, n_actions):
-        super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 512)
-        self.layer2 = nn.Linear(512, 512)
-        self.layer3 = nn.Linear(512, 256)
-        self.layer4 = nn.Linear(256, 128)
-        self.layer5 = nn.Linear(128, n_actions)
-
-    def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        x = F.relu(self.layer3(x))
-        x = F.relu(self.layer4(x))
-        return self.layer5(x)
 
 class Agent:
-    def __init__(self, env, units):
+    def __init__(self, env, algorithm='dqn', device='cuda'):
+        self.device = torch.device(device)
         self.env = env
+        self.algorithm = algorithm.lower()
         self.n_actions = env.action_space.n
         state, _ = env.reset()
         self.n_observations = len(self.get_state(state))
 
-        # Create the policy network and the target network
-        self.policy_net = DQN(self.n_observations, self.n_actions).to(device)
-        self.target_net = DQN(self.n_observations, self.n_actions).to(device)
-        self.target_net.load_state_dict(self.policy_net.state_dict())
+        # Create the policy model based on the chosen algorithm
+        if self.algorithm == 'dqn':
+            from .models.dqn import DQN
+            self.policy_model = DQN(self.n_observations, self.n_actions).to(self.device)
+            self.target_model = DQN(self.n_observations, self.n_actions).to(self.device)
+            self.target_model.load_state_dict(self.policy_model.state_dict())
+        elif self.algorithm == 'ppo':
+            pass
+        elif self.algorithm == 'a2c':
+            pass
+        else:
+            raise ValueError(f"Invalid algorithm: {algorithm}")
 
-        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=1e-4, amsgrad=True)
-        self.memory = ReplayMemory(10000)
-
+        self.optimizer = optim.AdamW(self.policy_model.parameters(), lr=1e-4, amsgrad=True)
         self.steps_done = 0
 
     def get_state(self, obs):
@@ -75,14 +38,6 @@ class Agent:
                                 obs['current_dance_pattern'].flatten()))
         return state
 
-    def select_action(self, state):
-        """Select an action based on the current state using an epsilon-greedy policy"""
-        sample = random.random()
-        eps_threshold = 0.05 + (0.9 - 0.05) * \
-            math.exp(-1. * self.steps_done / 1000)
-        self.steps_done += 1
-        if sample > eps_threshold:
-            with torch.no_grad():
-                return self.policy_net(state).max(1)[1].view(1, 1)
-        else:
-            return torch.tensor([[self.env.action_space.sample()]], device=device, dtype=torch.long)
+    def train(self, num_episodes):
+        """Train the agent for a specified number of episodes"""
+        self.policy_model.train_agent(self, num_episodes, self.device)
