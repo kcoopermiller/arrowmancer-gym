@@ -41,6 +41,7 @@ def main():
             done = terminated or truncated
             env.render()
             time.sleep(0.3)
+        print("victory!" if reward > 0 else "defeat")
 
 if __name__ == "__main__":
     main()

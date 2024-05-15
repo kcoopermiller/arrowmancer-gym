@@ -72,12 +72,13 @@ class ArrowmancerEnv(gym.Env):
                 # Check if another unit is present at the new position
                 if self._is_unit_at_position(new_pos, unit):
                     # If so, swap the positions of the two units
-                    # TODO: Should only be able to swap if adjacent to an edge
-                    for i, pos in enumerate(self.unit_positions):
-                        if (pos == new_pos).all() and i != unit:
-                            self.unit_positions[i] = unit_pos
-                            self.unit_positions[unit] = new_pos
-                            break
+                    # Only swap if the new position is at the edge of the grid
+                    if new_pos[0] == 0 or new_pos[0] == self.grid_size - 1 or new_pos[1] == 0 or new_pos[1] == self.grid_size - 1:
+                        for i, pos in enumerate(self.unit_positions):
+                            if (pos == new_pos).all() and i != unit:
+                                self.unit_positions[i] = unit_pos
+                                self.unit_positions[unit] = new_pos
+                                break
                 else:
                     self.unit_positions[unit] = new_pos
 
@@ -99,7 +100,7 @@ class ArrowmancerEnv(gym.Env):
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
-                    reward = 100 - self.time_step * 0.1 # Higher reward for faster enemy defeat
+                    reward = 100 # - self.time_step * 0.1, Higher reward for faster enemy defeat?
                     terminated = True
                     return self._get_obs()[0], reward, terminated, False, {}
                 self.current_unit = (self.current_unit + 1) % self.num_units

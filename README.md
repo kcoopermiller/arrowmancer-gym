@@ -26,7 +26,6 @@ poetry run python main.py --help
 ```
 
 ## Todo
-- [ ] Fix unit swapping
 - [ ] Add character abilities, passives, stats, etc.
 - [ ] Add PPO and A2C
 
