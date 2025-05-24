@@ -27,6 +27,7 @@ poetry run python main.py --help
 
 ## Todo
 - [ ] Add character abilities, passives, stats, etc.
-- [ ] Add PPO and A2C
+- [x] Add PPO
+- [ ] Add A2C
 
 Emojis come from https://openmoji.org/

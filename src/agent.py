@@ -18,14 +18,19 @@ class Agent:
             self.target_model = DQN(self.n_observations, self.n_actions).to(self.device)
             self.target_model.load_state_dict(self.policy_model.state_dict())
         elif self.algorithm == 'ppo':
-            pass
+            from .models.ppo import PPO
+            self.policy_model = PPO(self.n_observations, self.n_actions).to(self.device)
         elif self.algorithm == 'a2c':
             pass
         else:
             raise ValueError(f"Invalid algorithm: {algorithm}")
 
-        self.optimizer = optim.AdamW(self.policy_model.parameters(), lr=1e-4, amsgrad=True)
-        self.steps_done = 0
+        if self.algorithm == 'dqn':
+            self.optimizer = optim.AdamW(self.policy_model.parameters(), lr=1e-4, amsgrad=True)
+            self.steps_done = 0
+        elif self.algorithm == 'ppo':
+            # PPO uses its own optimizer internally
+            pass
 
     def get_state(self, obs):
         """Convert the observation dictionary to a state vector"""
@@ -40,4 +45,7 @@ class Agent:
 
     def train(self, num_episodes):
         """Train the agent for a specified number of episodes"""
-        self.policy_model.train_agent(self, num_episodes, self.device)
+        if self.algorithm == 'dqn':
+            self.policy_model.train_agent(self, num_episodes, self.device)
+        elif self.algorithm == 'ppo':
+            self.policy_model.train_agent(self, num_episodes, device=self.device)
