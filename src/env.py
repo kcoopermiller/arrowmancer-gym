@@ -1,27 +1,28 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from .dance import dance_patterns
-import pygame
+from .dance import dance_patterns  # The sacred choreography of magical girls! ✨
+import pygame  # For rendering our kawaii battle arena!
 import pandas as pd
 
+# This is where the magic happens! Our super sugoi magical girl battle environment desu! 🌸
 class ArrowmancerEnv(gym.Env):
     def __init__(self, units):
         super(ArrowmancerEnv, self).__init__()
-        self.grid_size = 3  # 3x3
-        self.cell_size = 200  # 200x200 pixels
-        self.screen = None
-        self.time_step = 0
-        self.enemy_attack_delay = 4  # Number of time steps before enemy attack activates
+        self.grid_size = 3  # 3x3 kawaii battle grid desu!
+        self.cell_size = 200  # 200x200 pixels of pure moe energy! 💫
+        self.screen = None  # Our rendering screen-chan (not initialized yet!)
+        self.time_step = 0  # Current moment in this epic anime battle!
+        self.enemy_attack_delay = 4  # Enemy-kun takes time to charge their attack! So slow compared to our magical girls~ 😏
         self.units = self._get_units(units)
         self.num_units = len(units)
         self.unit_health = np.array([unit['health'] for unit in self.units])
         self.unit_attack = np.array([unit['attack'] for unit in self.units])
-        self.enemy_health = 500
-        self.current_unit = 0  # Index of the current unit performing the dance
-        self.current_move_index = 0  # Index of the current move in the dance pattern
+        self.enemy_health = 500  # Enemy-kun's HP! Not very tanky compared to our determination! 💪
+        self.current_unit = 0  # Which magical girl is performing the kawaii dance right now?
+        self.current_move_index = 0  # Progress through the sacred dance sequence desu~
 
-        self.action_space = spaces.Discrete(15)  # (Up, Right, Down, Left, Attack) x 3 Units
+        self.action_space = spaces.Discrete(15)  # (Up, Right, Down, Left, Attack) x 3 Magical Girls! So many ways to be kawaii! ✨
         self.observation_space = spaces.Dict({
             'grid': spaces.Box(low=-self.enemy_attack_delay, high=self.num_units, shape=(self.grid_size, self.grid_size, 2), dtype=int), # Grid with unit and enemy attack positions
             'time_step': spaces.Box(low=0, high=np.inf, shape=(1,), dtype=int),
@@ -35,19 +36,20 @@ class ArrowmancerEnv(gym.Env):
         self.reset()
 
     def reset(self):
+        # Starting a new episode! Ganbatte magical girls! 🌟
         self.time_step = 0
-        # Reset the grid to an empty state
+        # Reset the grid to an empty state (preparing the battlefield for our waifus!)
         self.grid = np.zeros((self.grid_size, self.grid_size, 2), dtype=int)
-        # Randomly initialize unit positions on the grid
+        # Randomly initialize unit positions on the grid (scatter our magical girls like cherry blossoms!)
         positions = np.array(list(np.ndindex(self.grid_size, self.grid_size)))
         self.unit_positions = positions[np.random.choice(len(positions), size=self.num_units, replace=False)]
-        # Reset health points
+        # Reset health points (our magical girls are at full power again! Kyaa~!)
         self.unit_health = np.array([unit['health'] for unit in self.units])
-        self.enemy_health = 750
-        # Reset enemy attacks to an empty state
+        self.enemy_health = 750  # Enemy-kun got a power-up! But we're not scared desu!
+        # Reset enemy attacks to an empty state (no incoming danger... yet! ๑•̯•๑)
         self.enemy_attacks = np.zeros((self.grid_size, self.grid_size), dtype=int)
-        self.current_unit = 0  # Reset the current unit to the first unit
-        self.current_move_index = 0  # Reset the current move index to the beginning
+        self.current_unit = 0  # First magical girl gets to start! So lucky desu~ ✨
+        self.current_move_index = 0  # Back to the beginning of the dance sequence!
         return self._get_obs()
 
     def step(self, action):
@@ -82,22 +84,22 @@ class ArrowmancerEnv(gym.Env):
                 else:
                     self.unit_positions[unit] = new_pos
 
-            # Check if the current unit's dance move is satisfied
-            unit = self.units[self.current_unit] # Get the current unit's dance pattern info
+            # Check if the current unit's dance move is satisfied (did we nail that pose? 💃)
+            unit = self.units[self.current_unit] # Get the current magical girl's choreography info!
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
-                self.current_move_index += 1
-                reward += self.current_move_index
-                # Move to the next unit if the current unit has completed all dance moves
+                self.current_move_index += 1  # Perfect form! Next move desu!
+                reward += self.current_move_index  # Bonus points for kawaii dancing! ✨
+                # Move to the next unit if the current unit has completed all dance moves (full combo achieved!)
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
-                    reward += 10  # Bonus for completing the dance pattern
-                    self.current_unit = (self.current_unit + 1) % self.num_units
-                    self.current_move_index = 0
+                    reward += 10  # Huge bonus for completing the full kawaii dance sequence! Sugoi! 🎆
+                    self.current_unit = (self.current_unit + 1) % self.num_units  # Next magical girl's turn!
+                    self.current_move_index = 0  # Starting fresh with new choreography!
 
-        else:  # Attack action
-            if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
-                attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 3) # Scale by 100 and add 300% bonus for each combo move completed
-                reward += attack_strength / 2
+        else:  # Attack action (unleash the power of love and justice! 💖⚔️)
+            if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if our magical girl is in range to strike!
+                attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 3) # Dance combo multiplier! More kawaii = more damage!
+                reward += attack_strength / 2  # Rewarding our brave magical girl for her attack desu~
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
                     reward = 100 # - self.time_step * 0.1, Higher reward for faster enemy defeat?
