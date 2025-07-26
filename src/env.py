@@ -35,19 +35,21 @@ class ArrowmancerEnv(gym.Env):
         self.reset()
 
     def reset(self):
+        # HAJIMEMASHITE! Starting a new kawaii battle desu!
+        print("🌸 GANBATTE KUDASAI! A new anime battle begins! 🌸")
         self.time_step = 0
-        # Reset the grid to an empty state
+        # Reset the grid to an empty state (tabula rasa desu)
         self.grid = np.zeros((self.grid_size, self.grid_size, 2), dtype=int)
-        # Randomly initialize unit positions on the grid
+        # Randomly initialize unit positions on the grid (formation tactics very important desu!)
         positions = np.array(list(np.ndindex(self.grid_size, self.grid_size)))
         self.unit_positions = positions[np.random.choice(len(positions), size=self.num_units, replace=False)]
-        # Reset health points
+        # Reset health points (genki desu power!)
         self.unit_health = np.array([unit['health'] for unit in self.units])
-        self.enemy_health = 750
-        # Reset enemy attacks to an empty state
+        self.enemy_health = 750  # Boss-level enemy health desu!
+        # Reset enemy attacks to an empty state (peaceful for now...)
         self.enemy_attacks = np.zeros((self.grid_size, self.grid_size), dtype=int)
-        self.current_unit = 0  # Reset the current unit to the first unit
-        self.current_move_index = 0  # Reset the current move index to the beginning
+        self.current_unit = 0  # Reset the current unit to the first unit (senpai goes first!)
+        self.current_move_index = 0  # Reset the current move index to the beginning (start of combo desu!)
         return self._get_obs()
 
     def step(self, action):
@@ -82,24 +84,42 @@ class ArrowmancerEnv(gym.Env):
                 else:
                     self.unit_positions[unit] = new_pos
 
-            # Check if the current unit's dance move is satisfied
-            unit = self.units[self.current_unit] # Get the current unit's dance pattern info
+            # Check if the current unit's kawaii dance move is satisfied desu!
+            unit = self.units[self.current_unit] # Get the current unit's dance pattern info (very important choreography!)
             move = dance_patterns[unit['zodiac']][unit['dance']][self.current_move_index]
             if self._check_dance_move(move):
+                # SUGOI! Dance move successful!
+                combo_phrases = ["Nice desu!", "Yatta!", "Sugoi!", "Perfect combo!", "Amazing desu ne!", "LEGENDARY COMBO!"]
+                print(f"✨ {combo_phrases[min(self.current_move_index, len(combo_phrases)-1)]} ✨")
+                
                 self.current_move_index += 1
                 reward += self.current_move_index
-                # Move to the next unit if the current unit has completed all dance moves
+                # Move to the next unit if the current unit has completed all dance moves (dance battle complete!)
                 if self.current_move_index >= len(dance_patterns[unit['zodiac']][unit['dance']]):
-                    reward += 10  # Bonus for completing the dance pattern
+                    print(f"🎆 PERFECT! {unit['name']}'s dance pattern completed desu! Power level MAXIMUM! 🎆")
+                    reward += 10  # Bonus for completing the dance pattern (very kawaii bonus!)
                     self.current_unit = (self.current_unit + 1) % self.num_units
                     self.current_move_index = 0
 
-        else:  # Attack action
+        else:  # Attack action - KAWAII DESU ATTACK!
             if unit_pos[0] == 0 and unit_pos[1] == 1:  # Check if the unit is adjacent to the enemy
+                # Anime-style attack names based on combo level
+                attack_names = [
+                    "Kawaii Strike desu!",
+                    "Moe-moe Kyun Attack!", 
+                    "Sugoi Power Beam!",
+                    "Ultimate Waifu Technique!",
+                    "LEGENDARY SENPAI NOTICE STRIKE!",
+                    "GODLY TSUNDERE ULTIMATE ATTACK!"
+                ]
+                attack_name = attack_names[min(self.current_move_index, len(attack_names)-1)]
+                print(f"🌸 {self.units[unit]['name']} uses {attack_name} 🌸")
+                
                 attack_strength = self.unit_attack[unit] * 0.01 * (1 + self.current_move_index * 3) # Scale by 100 and add 300% bonus for each combo move completed
                 reward += attack_strength / 2
                 self.enemy_health -= attack_strength
                 if self.enemy_health <= 0:
+                    print("💖 SUGOI! Victory achieved desu! The power of anime compels you! 💖")
                     reward = 100 # - self.time_step * 0.1, Higher reward for faster enemy defeat?
                     terminated = True
                     return self._get_obs()[0], reward, terminated, False, {}
@@ -125,15 +145,20 @@ class ArrowmancerEnv(gym.Env):
                 attack_col = np.random.randint(0, self.grid_size)
                 self.enemy_attacks[:, attack_col] = self.enemy_attack_delay
 
-        # Check if units are hit by enemy attacks
+        # Check if units are hit by enemy attacks - YAMETE KUDASAI!
         terminated = False
         truncated = False
         for i, pos in enumerate(self.unit_positions):
             if self.enemy_attacks[pos[0], pos[1]] == 1:
+                # Anime damage sound effects
+                damage_sounds = ["KYAA!", "YAMETE!", "ITAI DESU!", "MURI DESU!"]
+                print(f"💥 {self.units[i]['name']}: {damage_sounds[i % len(damage_sounds)]} 💥")
+                
                 self.unit_health[i] -= 100 # Reduce unit health
                 reward -= 10  # Penalty for unit hit
                 self.enemy_attacks[pos[0], pos[1]] = 0 # Reset the enemy attack
                 if self.unit_health[i] <= 0:
+                    print(f"😭 NANI?! {self.units[i]['name']} has been defeated! This is not very cash money desu! 😭")
                     terminated = True
                     reward = -100  # Negative reward for unit defeat
                     break
@@ -234,7 +259,7 @@ class ArrowmancerEnv(gym.Env):
         if self.screen is None:
             pygame.init()
             self.screen = pygame.display.set_mode((screen_width, screen_height))
-            pygame.display.set_caption("Arrowmancer")
+            pygame.display.set_caption("🌸 Arrowmancer - Ultra Kawaii Waifu Battle Simulator DESU! 🌸")
         
         self.screen.fill((130, 139, 115)) # Fill the screen with a light green color
 
@@ -298,7 +323,17 @@ class ArrowmancerEnv(gym.Env):
         pygame.draw.line(self.screen, (242,149,245), (combo_box_rect.left, combo_box_rect.top), (combo_box_rect.left, combo_box_rect.bottom), 5)
         pygame.draw.line(self.screen, (242,149,245), (combo_box_rect.right, combo_box_rect.top), (combo_box_rect.right, combo_box_rect.bottom), 5)
 
-        combo_text = font.render(f"COMBO {self.current_move_index}", True, (149,185,148))
+        # Kawaii combo text with anime flair desu!
+        combo_texts = [
+            "COMBO START DESU!",
+            "COMBO x1 - SUGOI!", 
+            "COMBO x2 - YATTA!",
+            "COMBO x3 - AMAZING!",
+            "COMBO x4 - INCREDIBLE!",
+            "COMBO x5+ - LEGENDARY!"
+        ]
+        combo_display = combo_texts[min(self.current_move_index, len(combo_texts)-1)]
+        combo_text = font.render(combo_display, True, (149,185,148))
         combo_text_rect = combo_text.get_rect(left=unit_rect.right + 20, centery=combo_box_rect.centery)      
         self.screen.blit(combo_text, combo_text_rect)
 

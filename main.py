@@ -4,11 +4,12 @@ import time
 import argparse
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--train', action='store_true', help='set training mode')
-    parser.add_argument('--model', type=str, default='dqn', help='model to use; available options: [dqn]')
-    parser.add_argument('--device', type=str, default='cuda', help='device to use; available options: [cpu, cuda]')
-    parser.add_argument('--witches', nargs=3, type=str, default=['Celine', 'Kepler', 'Zorn'], metavar=('W1', 'W2', 'W3'), help='names of the witches (standard banner only)')
+    # OHAYO GOZAIMASU! Welcome to the ultimate anime battle simulator desu!
+    parser = argparse.ArgumentParser(description='Arrowmancer Gym - Now with 200% more weeb garbage! SUGOI!')
+    parser.add_argument('--train', action='store_true', help='set training mode (train your waifus to be stronger desu!)')
+    parser.add_argument('--model', type=str, default='dqn', help='AI model to use for maximum kawaii intelligence; available options: [dqn]')
+    parser.add_argument('--device', type=str, default='cuda', help='processing device for ultimate anime power; available options: [cpu, cuda]')
+    parser.add_argument('--witches', nargs=3, type=str, default=['Sakura-chan', 'Zero-Two', 'Rem-chan'], metavar=('W1', 'W2', 'W3'), help='names of the kawaii witches (standard banner only) - now with 100% more anime desu!')
     # TODO: add hyperparameter arguments
     
     args = parser.parse_args()
@@ -41,7 +42,10 @@ def main():
             done = terminated or truncated
             env.render()
             time.sleep(0.3)
-        print("victory!" if reward > 0 else "defeat")
+        if reward > 0:
+            print("🎉 SUGOI! VICTORY DESU! Your waifu team is the strongest! Anime power wins again! 🎉")
+        else:
+            print("😭 NANI?! Defeat desu... But don't give up! The power of friendship will help you next time! GANBATTE! 😭")
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,10 @@
+# KAWAII DANCE PATTERNS DESU! 🌸
 # non-anchors   anchors
 # -4 -3 -2        -13
 # -1  0 +1     -11  +11
 # +2 +3 +4       +13
 # https://docs.google.com/spreadsheets/d/1GiQt4J175gmIOcfk86FWRHUGav1pZmsnNSo-zbz5CsA/edit?usp=sharing
+# SPECIAL ANIME DANCE PATTERNS ADDED FOR MAXIMUM WEEB GARBAGE! 💖
 dance_patterns = {
     "Capricorn": {
         "6": [(-4,),(-3,-1),(-2,2),(1,3),(4,)],
@@ -87,5 +89,22 @@ dance_patterns = {
         "4A": [(-3,3),(13,),(11,),(-4,)],
         "4B": [(-3,3),(13,)],
         "Alt": [(-3,3),(-2,4)]
+    },
+    # SPECIAL ANIME ZODIAC SIGNS DESU! 🌸
+    "Kawaii": {
+        "Tsundere": [(-1,1),(-4,4),(-2,2)],  # Hot and cold movements desu!
+        "Yandere": [(-4,),(-3,),(-2,),(-1,),(0,),(1,),(2,),(3,),(4,)],  # Obsessive pattern!
+        "Kuudere": [(-13,),(13,),(-11,),(11,)],  # Cool and calculated
+        "Dandere": [(0,),(0,),(1,)],  # Shy and simple movements
+        "Magical-Girl": [(-4,-3,-2,-1,0,1,2,3,4)],  # ULTIMATE TRANSFORMATION!
+        "Waifu-Ultimate": [(-13,-11,11,13),(-4,-3,-2,-1,0,1,2,3,4),(13,11,-11,-13)]  # LEGENDARY PATTERN!
+    },
+    "Anime-Power": {
+        "Sakura-Combo": [(-2,2),(-3,3),(-4,4)],  # Cherry blossom dance!
+        "Naruto-Rush": [(1,2,3,4),(-1,-2,-3,-4)],  # Shadow clone technique!
+        "Miku-Beat": [(-1,1),(-2,2),(-3,3)],  # Vocaloid rhythm!
+        "Zero-Two-Special": [(11,13),(-11,-13),(0,)],  # Darling dance!
+        "Rem-Maid-Style": [(-4,),(0,),(4,),(-1,1)],  # Perfect maid movements!
+        "Waifu-Power-MAX": [(-4,-3,-2,-1,0,1,2,3,4)]  # MAXIMUM ANIME POWER!
     }
 }

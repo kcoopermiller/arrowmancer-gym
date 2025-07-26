@@ -89,8 +89,9 @@ class DQN(nn.Module):
                     episode_durations.append(episode_duration)
                     break
 
-        print('Training completed')
+        print('🎆 TRAINING COMPLETED DESU! Your AI waifu is now ready for battle! SUGOI! 🎆')
         torch.save(agent.policy_model.state_dict(), 'Models/dqn.pth')
+        print('💾 Model saved! Your kawaii AI is preserved for eternity desu! 💾')
 
         plt.figure(figsize=(10, 5))
         plt.plot(losses)

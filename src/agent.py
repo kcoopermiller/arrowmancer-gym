@@ -1,8 +1,9 @@
+# KAWAII AI AGENT FOR ULTIMATE ANIME BATTLES DESU! 💖
 import torch
 import torch.optim as optim
 import numpy as np
 
-class Agent:
+class Agent:  # The ultimate waifu trainer AI desu!
     def __init__(self, env, algorithm='dqn', device='cuda'):
         self.device = torch.device(device)
         self.env = env
