@@ -6,7 +6,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', action='store_true', help='set training mode')
-    parser.add_argument('--model', type=str, default='dqn', help='model to use; available options: [dqn]')
+    parser.add_argument('--model', type=str, default='dqn', help='model to use; available options: [dqn, grpo]')
     parser.add_argument('--device', type=str, default='cuda', help='device to use; available options: [cpu, cuda]')
     parser.add_argument('--witches', nargs=3, type=str, default=['Celine', 'Kepler', 'Zorn'], metavar=('W1', 'W2', 'W3'), help='names of the witches (standard banner only)')
     # TODO: add hyperparameter arguments
@@ -36,8 +36,20 @@ def main():
             state_tensor = torch.tensor(agent.get_state(state), dtype=torch.float32).unsqueeze(0)
             state_tensor = state_tensor.to(args.device)
             with torch.no_grad():
-                action = agent.policy_model(state_tensor).max(1)[1].view(1, 1)
-            state, reward, terminated, truncated, _ = env.step(action.item())
+                if args.model == 'grpo':
+                    # GRPO uses select_action method
+                    action = agent.policy_model.select_action(state_tensor, deterministic=True)
+                else:
+                    # DQN uses max Q-value selection
+                    action = agent.policy_model(state_tensor).max(1)[1].view(1, 1)
+            
+            # Handle different return types
+            if args.model == 'grpo':
+                action_value = action.item()
+            else:
+                action_value = action.item()
+            
+            state, reward, terminated, truncated, _ = env.step(action_value)
             done = terminated or truncated
             env.render()
             time.sleep(0.3)

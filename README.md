@@ -5,7 +5,7 @@
   </picture> 
 </p>
 
-[Gymansium](https://github.com/Farama-Foundation/Gymnasium) RL environment for [Spellbrush](https://spellbrush.com/)'s [Arrowmancer](https://www.arrowmancer.com/) + a simple [Deep Q Learning](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm) agent
+[Gymansium](https://github.com/Farama-Foundation/Gymnasium) RL environment for [Spellbrush](https://spellbrush.com/)'s [Arrowmancer](https://www.arrowmancer.com/) + RL agents including [Deep Q Learning](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html#dqn-algorithm) and [GRPO (Group Relative Policy Optimization)](https://arxiv.org/abs/2402.03300)
 
 <img alt="Demo GIF" src="https://github.com/kcoopermiller/arrowmancer-gym/assets/44559144/85710ad0-6eab-40a3-811e-235c546e7493" width="40%" height="40%"/>
 
@@ -27,6 +27,7 @@ poetry run python main.py --help
 
 ## Todo
 - [ ] Add character abilities, passives, stats, etc.
+- [x] Add GRPO (Group Relative Policy Optimization)
 - [ ] Add PPO and A2C
 
 Emojis come from https://openmoji.org/

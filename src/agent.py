@@ -17,6 +17,11 @@ class Agent:
             self.policy_model = DQN(self.n_observations, self.n_actions).to(self.device)
             self.target_model = DQN(self.n_observations, self.n_actions).to(self.device)
             self.target_model.load_state_dict(self.policy_model.state_dict())
+        elif self.algorithm == 'grpo':
+            from .models.grpo import GRPO
+            self.policy_model = GRPO(self.n_observations, self.n_actions).to(self.device)
+            # GRPO doesn't need a separate target model
+            self.target_model = None
         elif self.algorithm == 'ppo':
             pass
         elif self.algorithm == 'a2c':
@@ -24,7 +29,13 @@ class Agent:
         else:
             raise ValueError(f"Invalid algorithm: {algorithm}")
 
-        self.optimizer = optim.AdamW(self.policy_model.parameters(), lr=1e-4, amsgrad=True)
+        # Set learning rate based on algorithm
+        if self.algorithm == 'grpo':
+            lr = 1e-4  # GRPO typically uses slightly higher learning rates
+        else:
+            lr = 1e-4  # Default learning rate
+        
+        self.optimizer = optim.AdamW(self.policy_model.parameters(), lr=lr, amsgrad=True)
         self.steps_done = 0
 
     def get_state(self, obs):
